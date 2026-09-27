@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: fyag-obras-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-fyag_obras}
+      POSTGRES_USER: ${DB_USER:-fyag}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-fyag}
+    ports:
+      - "5432:5432"
+    volumes:
+      - fyag_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-fyag} -d ${DB_NAME:-fyag_obras}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: fyag-obras-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-fyag_obras}
+      DB_USER: ${DB_USER:-fyag}
+      DB_PASSWORD: ${DB_PASSWORD:-fyag}
+      JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en el archivo .env (mínimo 32 caracteres)}
+      SERVER_PORT: 8082
+    ports:
+      - "8082:8082"
+
+volumes:
+  fyag_pgdata:
