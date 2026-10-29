@@ -73,7 +73,7 @@ public class UsuarioController {
      * @param paginacion la paginación
      * @return la lista de usuarios
      */
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','GERENCIA')")
     @GetMapping
     public ResponseEntity<PagedModel<DetallesUsuarioDTO>> listar(
             @RequestParam(required = false) Role role,
@@ -102,10 +102,9 @@ public class UsuarioController {
      * @param username
      * @return
      */
-    @PreAuthorize("hasRole('ADMIN') or #username == authentication.name")
+    @PreAuthorize("hasAnyRole('ADMIN','GERENCIA') or #username == authentication.name")
     @GetMapping("/{username}")
-    public ResponseEntity<DetallesUsuarioDTO> obtenerPorUsername(@PathVariable String username) {
-        var usuario = usuarioService.obtenerPorUsername(username);
+    public ResponseEntity<DetallesUsuarioDTO> obtenerPorUsername(@PathVariable String username) {    var usuario = usuarioService.obtenerPorUsername(username);
         return ResponseEntity.ok(new DetallesUsuarioDTO(usuario));
     }
 

@@ -18,11 +18,11 @@ public record RegistrarUsuarioDTO(
         @Size(max = 150, message = "El correo electrónico no debe exceder 150 caracteres")
         String email,
 
-        @NotBlank(message = "El teléfono es obligatorio")
         @Size(max = 20, message = "El teléfono no debe exceder 20 caracteres")
         String telefono,
 
         @NotBlank(message = "El RUT es obligatorio")
+        @Pattern(regexp = "^\\d{7,8}-[\\dkK]$", message = "Formato de RUT inválido (ej: 12345678-5)")
         String rut,
 
         @NotBlank(message = "El nombre de usuario es obligatorio")

@@ -24,6 +24,6 @@ public class Persona {
     protected String rut;
     @Column(nullable = false)
     protected String email;
-    @Column(nullable = false)
+    @Column
     protected String telefono;
 }

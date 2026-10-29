@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class UsuarioDuplicado implements ValidarCrearUsuario{
+public class UsuarioDuplicado implements ValidarCrearUsuario {
     @Autowired
     private UsuarioRepository repository;
 
@@ -18,6 +18,9 @@ public class UsuarioDuplicado implements ValidarCrearUsuario{
         }
         if (repository.findByEmail(data.email()).isPresent()) {
             throw new ValidationException("Este email ya existe.");
+        }
+        if (repository.findByRut(data.rut()).isPresent()) {
+            throw new ValidationException("Este RUT ya existe.");
         }
     }
 }

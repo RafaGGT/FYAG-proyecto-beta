@@ -19,9 +19,9 @@ public class TokenService {
     @Value("${api.security.token.secret}")
     private String secret;
 
-    // Se ejecuta una sola vez, al arrancar el servicio -- si el secreto es
-    // débil, el contexto de Spring NO termina de levantar (falla rápido
-    // y claro, en vez de arrancar "bien" con un hueco de seguridad silencioso).
+    private static final String ISSUER = "FYAG Obras";
+
+
     @PostConstruct
     public void validarSecret() {
         if (secret == null || secret.length() < 32) {
@@ -36,7 +36,7 @@ public class TokenService {
         try {
             var algoritmo = Algorithm.HMAC256(secret);
             return JWT.create()
-                    .withIssuer("Api Bodega") //
+                    .withIssuer(ISSUER) //
                     .withSubject(usuario.getUsername())
                     .withClaim("type", "access") // marca este token como de acceso
                     .withClaim("role", usuario.getRole().name()) // para que otros microservicios (inventory-service) sepan el rol sin llamarte
@@ -51,7 +51,7 @@ public class TokenService {
         try {
             var algoritmo = Algorithm.HMAC256(secret);
             return JWT.create()
-                    .withIssuer("Api Bodega")
+                    .withIssuer(ISSUER)
                     .withSubject(usuario.getId().toString())
                     .withClaim("type", "refresh") // marca este token como de refresco
                     .withExpiresAt(fechaExpiracionRefresh())
@@ -67,7 +67,7 @@ public class TokenService {
         try {
             var algoritmo = Algorithm.HMAC256(secret);
             return JWT.require(algoritmo)
-                    .withIssuer("Api Bodega")
+                    .withIssuer(ISSUER)
                     .withClaim("type", tipoEsperado) // rechaza el token si el claim no coincide
                     .build()
                     .verify(tokenJWT);
@@ -85,7 +85,6 @@ public class TokenService {
     }
 
     private Instant fechaExpiracionRefresh() {
-        return Instant.now().plus(7, ChronoUnit.DAYS);
+        return Instant.now().plus(8, ChronoUnit.HOURS);
     }
-
 }
