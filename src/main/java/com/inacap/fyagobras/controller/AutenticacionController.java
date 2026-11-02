@@ -27,6 +27,7 @@ public class AutenticacionController {
     @Autowired
     private UsuarioRepository userRepository;
 
+    // POST /login: valida usuario y contraseña y entrega access token + refresh token
     @PostMapping
     public ResponseEntity<DatosJWTToken> autenticarUsuario(
             @RequestBody @Valid LoginDTO datosAutenticacionUsuario) {
@@ -42,6 +43,7 @@ public class AutenticacionController {
         return ResponseEntity.ok(new DatosJWTToken(accessToken, refreshToken));
     }
 
+    // POST /actualizar-token: actualiza el access token usando el refresh token
     @PostMapping("/actualizar-token")
     public ResponseEntity<DatosJWTToken> actualizarToken(@RequestBody String refreshToken) {
         var decoded = tokenService.verificarToken(refreshToken, "refresh");
@@ -49,6 +51,7 @@ public class AutenticacionController {
         var usuario = (Usuario) userRepository.findById(idUsuario)
                 .orElseThrow(() -> new TokenInvalidoException("Usuario del token no existe", null));
 
+        // Verifica que el usuario esté habilitado
         if (!usuario.isEnabled()) {
             throw new TokenInvalidoException("Usuario desactivado", null);
         }

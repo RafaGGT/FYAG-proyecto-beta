@@ -16,6 +16,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
 
   app:
     build: .
@@ -23,6 +27,8 @@ services:
     restart: unless-stopped
     depends_on:
       db:
+        condition: service_healthy
+      mongo:
         condition: service_healthy
     environment:
       DB_HOST: db

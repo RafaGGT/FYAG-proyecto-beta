@@ -28,17 +28,17 @@ public class UsuarioController {
      * Registrar un nuevo usuario.
      * @param datos los datos del usuario a registrar
      * @param uriComponentsBuilder para construir la URI del recurso creado
-     * @return la respuesta con el estado 201 Created y el cuerpo con las credenciales temporales
+     * @return la respuesta con el estado 201 Created
      */
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<CredencialesTemporalesDTO> registrar(
+    public ResponseEntity<DetallesUsuarioDTO> registrar(
             @RequestBody @Valid RegistrarUsuarioDTO datos,
             UriComponentsBuilder uriComponentsBuilder) {
 
         var creado = usuarioService.registrar(datos);
         var uri = uriComponentsBuilder.path("/usuarios/{username}")
-                .buildAndExpand(creado.usuario().username())
+                .buildAndExpand(creado.username())
                 .toUri();
         return ResponseEntity.created(uri).body(creado);
     }

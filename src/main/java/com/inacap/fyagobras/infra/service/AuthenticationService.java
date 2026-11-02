@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+// Spring Security usa este método para buscar al usuario durante el login
 @Service
 public class AuthenticationService implements UserDetailsService {
 
