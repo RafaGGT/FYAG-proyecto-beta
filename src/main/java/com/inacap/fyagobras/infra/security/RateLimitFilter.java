@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+// Limita los intentos de login por IP para frenar ataques de fuerza bruta
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
 

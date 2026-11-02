@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
-
+import jakarta.validation.ValidationException;
 import java.util.stream.Collectors;
 
 
@@ -24,6 +24,12 @@ import java.util.stream.Collectors;
 public class GestorErrores extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GestorErrores.class);
+
+    // Validaciones de Bean Validation que no pasan por @Valid del controlador: 400 en vez de 500
+    @ExceptionHandler(ValidationException.class)
+    public ProblemDetail validacion(ValidationException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Datos inválidos");
+    }
 
     @ExceptionHandler(RecursoNoEncontradoException.class)
     public ProblemDetail noEncontrado(RecursoNoEncontradoException e) {

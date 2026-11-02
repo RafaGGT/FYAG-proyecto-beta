@@ -35,13 +35,12 @@ public class UsuarioService {
     private long bloqueoMinutos;
 
     @Transactional
-    public CredencialesTemporalesDTO registrar(RegistrarUsuarioDTO datos) {
+    public DetallesUsuarioDTO registrar(RegistrarUsuarioDTO datos) {
         crearValidador.forEach(v -> v.validate(datos));
-        var temporal = GeneradorPassword.generar(12);
-        var usuario = new Usuario(datos, passwordEncoder.encode(temporal));
-        usuario.setDebeCambiarPassword(true);
+        var usuario = new Usuario(datos, passwordEncoder.encode(datos.password()));
+        usuario.setDebeCambiarPassword(true); // obliga a cambiarla en su primer login
         var guardado = usuarioRepository.save(usuario);
-        return new CredencialesTemporalesDTO(new DetallesUsuarioDTO(guardado), temporal);
+        return new DetallesUsuarioDTO(guardado);
     }
 
     public Usuario obtenerPorUsername(String username) {
@@ -87,22 +86,6 @@ public class UsuarioService {
         return usuario;
     }
 
-    @Transactional
-    public Usuario despedir(String username) {
-        var usuario = buscar(username);
-
-        if (usuario.getRole() == Role.ADMIN) {
-            throw new ConflictoNegocioException(
-                    "El rol ADMIN es intocable: no se puede desactivar desde este endpoint.");
-        }
-
-        if (!usuario.isEnabled()) {
-            throw new ConflictoNegocioException("El usuario ya se encuentra desactivado.");
-        }
-
-        usuario.desactivar();
-        return usuario;
-    }
 
     @Transactional
     public Usuario cambiarEstado(String username, UsuarioActivoDTO datos) {

@@ -2,7 +2,7 @@ package com.inacap.fyagobras.domain.user.validation.create;
 
 import com.inacap.fyagobras.domain.user.dto.RegistrarUsuarioDTO;
 import com.inacap.fyagobras.domain.user.repository.UsuarioRepository;
-import jakarta.validation.ValidationException;
+import com.inacap.fyagobras.infra.exception.ConflictoNegocioException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -14,13 +14,13 @@ public class UsuarioDuplicado implements ValidarCrearUsuario {
     @Override
     public void validate(RegistrarUsuarioDTO data) {
         if (repository.findByUsername(data.username()).isPresent()) {
-            throw new ValidationException("Este usuario ya existe.");
+            throw new ConflictoNegocioException("Este usuario ya existe.");
         }
         if (repository.findByEmail(data.email()).isPresent()) {
-            throw new ValidationException("Este email ya existe.");
+            throw new ConflictoNegocioException("Este email ya existe.");
         }
         if (repository.findByRut(data.rut()).isPresent()) {
-            throw new ValidationException("Este RUT ya existe.");
+            throw new ConflictoNegocioException("Este RUT ya existe.");
         }
     }
 }

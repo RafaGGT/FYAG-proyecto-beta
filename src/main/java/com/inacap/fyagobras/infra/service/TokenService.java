@@ -16,12 +16,14 @@ import java.time.temporal.ChronoUnit;
 
 @Service
 public class TokenService {
+    // Llave de firma del JWT: viene de la variable de entorno JWT_SECRET, nunca del código
     @Value("${api.security.token.secret}")
     private String secret;
 
+    // Emisor del token; si no coincide al verificar, el token se rechaza
     private static final String ISSUER = "FYAG Obras";
 
-
+    // Al arrancar, falla si la llave es muy corta (mínimo 32 caracteres)
     @PostConstruct
     public void validarSecret() {
         if (secret == null || secret.length() < 32) {
@@ -32,6 +34,7 @@ public class TokenService {
         }
     }
 
+    // Token de acceso: vence en 30 min y lleva el rol como claim
     public String generarToken(Usuario usuario) {
         try {
             var algoritmo = Algorithm.HMAC256(secret);
@@ -46,7 +49,7 @@ public class TokenService {
             throw new RuntimeException("error al generar el token JWT", exception);
         }
     }
-
+    // Token de refresco: vence en 8 h y solo sirve en /login/actualizar-token
     public String generarRefreshToken(Usuario usuario) {
         try {
             var algoritmo = Algorithm.HMAC256(secret);
@@ -76,6 +79,7 @@ public class TokenService {
         }
     }
 
+    // Devuelve el username del token de acceso (lanza excepción si es inválido)
     public String getSubject(String tokenJWT) {
         return verificarToken(tokenJWT, "access").getSubject();
     }

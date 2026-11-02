@@ -16,6 +16,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+// Filtro JWT: se ejecuta en cada request y decide si el usuario queda autenticado.
+// Lee el token, valida al usuario contra la BD (activo, cambio de clave pendiente) y carga su rol.
 @Component
 public class SecurityFilter extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(SecurityFilter.class);
@@ -29,6 +31,7 @@ public class SecurityFilter extends OncePerRequestFilter {
     @Autowired
     private ErrorSeguridadHandler errorSeguridadHandler;
 
+    // Flujo: ruta pública -> token -> usuario activo -> cambio de clave -> autenticar
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         // Saltar rutas públicas y preflight OPTIONS
@@ -40,7 +43,7 @@ public class SecurityFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-
+        // Sin token en una ruta protegida: 401
         var tokenJWT = recuperarToken(request);
 
         if (tokenJWT == null) {
@@ -52,6 +55,7 @@ public class SecurityFilter extends OncePerRequestFilter {
             // Extrae el username del subject del token (ya validado en tokenService.getSubject)
             var subject = tokenService.getSubject(tokenJWT);
 
+            // El usuario se consulta en cada request, así desactivar una cuenta o cambiar su rol aplica de inmediato
             var usuarioOpt = repository.findByUsername(subject);
             if (usuarioOpt.isEmpty()) {
                 errorSeguridadHandler.escribir(response, 401, "No autenticado");
@@ -62,6 +66,7 @@ public class SecurityFilter extends OncePerRequestFilter {
                 errorSeguridadHandler.escribir(response, 401, "No autenticado");
                 return;
             }
+            // Con contraseña temporal solo puede ver su perfil y cambiar la clave
             if (usuario.isDebeCambiarPassword() && !permitidaConCambioPendiente(method, path)) {
                 errorSeguridadHandler.escribir(response, 403, "Debe cambiar su contraseña antes de continuar");
                 return;
@@ -80,6 +85,7 @@ public class SecurityFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    // Extrae el token del header "Authorization: Bearer <token>"
     private String recuperarToken(HttpServletRequest request) {
         var authorizationHeader = request.getHeader("Authorization");
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
@@ -88,6 +94,7 @@ public class SecurityFilter extends OncePerRequestFilter {
         return null;
     }
 
+    // Únicas rutas permitidas mientras el usuario tenga contraseña temporal
     private boolean permitidaConCambioPendiente(String method, String path) {
         return ("GET".equals(method) && path.equals("/usuarios/me"))
                 || ("PATCH".equals(method) && path.equals("/usuarios/me/password"));
