@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.inacap.fyagobras.domain.obra.dto.CambiarEstadoObraDTO;
 
 import java.util.Map;
 
@@ -91,6 +92,33 @@ public class ObraService {
         if (esTecnico && !esSuya) {
             throw new AccessDeniedException("Solo puede consultar las obras que tiene asignadas.");
         }
+        return new DetallesObraDTO(obra);
+    }
+
+    @Transactional
+    public DetallesObraDTO cambiarEstado(Long id, CambiarEstadoObraDTO datos, Usuario actor) {
+        var obra = obraRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Obra no encontrada"));
+
+        var origen = obra.getEstado();
+        var destino = datos.estado();
+
+        if (!origen.puedePasarA(destino)) {
+            throw new ConflictoNegocioException(
+                    "Transición no permitida: " + origen + " a " + destino + ".");
+        }
+        if (destino == EstadoObra.SUSPENDIDA
+                && (datos.motivo() == null || datos.motivo().isBlank())) {
+            throw new ConflictoNegocioException("El motivo es obligatorio al suspender una obra.");
+        }
+
+        obra.cambiarEstado(destino, datos.motivo());
+
+        auditoriaService.registrar(actor, "obras", obra.getId(), "CAMBIAR_ESTADO",
+                datos.motivo(),
+                Map.of("estado", origen.name()),
+                Map.of("estado", destino.name()));
+
         return new DetallesObraDTO(obra);
     }
 }

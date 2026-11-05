@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
+import com.inacap.fyagobras.domain.obra.dto.CambiarEstadoObraDTO;
 
 @RestController
 @RequestMapping("/obras")
@@ -57,4 +58,17 @@ public class ObraController {
 
         return ResponseEntity.ok(obraService.obtener(id, actor));
     }
+
+    /** Cambiar el estado de la obra según la máquina de estados. Solo Supervisor. */
+    @PreAuthorize("hasRole('SUPERVISOR')")
+    @PatchMapping("/{id}/estado")
+    public ResponseEntity<DetallesObraDTO> cambiarEstado(
+            @PathVariable Long id,
+            @RequestBody @Valid CambiarEstadoObraDTO datos,
+            @AuthenticationPrincipal Usuario actor) {
+
+        return ResponseEntity.ok(obraService.cambiarEstado(id, datos, actor));
+    }
+
+
 }

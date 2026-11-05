@@ -60,4 +60,11 @@ public class Obra {
         this.tecnico = tecnico;
         this.estado = EstadoObra.EN_PROCESO;
     }
+
+    public void cambiarEstado(EstadoObra destino, String motivo) {
+        if (destino == EstadoObra.SUSPENDIDA) {
+            this.motivoSuspension = motivo.trim();
+        }
+        this.estado = destino;
+    }
 }
