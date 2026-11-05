@@ -3,8 +3,10 @@ package com.inacap.fyagobras.domain.factura;
 import com.inacap.fyagobras.domain.audit.AuditoriaService;
 import com.inacap.fyagobras.domain.factura.dto.DetallesFacturaDTO;
 import com.inacap.fyagobras.domain.factura.dto.EmitirFacturaDTO;
+import com.inacap.fyagobras.domain.factura.dto.RegistrarPagoDTO;
 import com.inacap.fyagobras.domain.factura.repository.FacturaRepository;
 import com.inacap.fyagobras.domain.factura.validation.create.ValidarEmitirFactura;
+import com.inacap.fyagobras.domain.factura.validation.pago.ValidarRegistrarPago;
 import com.inacap.fyagobras.domain.obra.repository.ObraRepository;
 import com.inacap.fyagobras.domain.user.Usuario;
 import com.inacap.fyagobras.infra.exception.RecursoNoEncontradoException;
@@ -24,6 +26,7 @@ public class FacturaService {
     @Autowired private ObraRepository obraRepository;
     @Autowired private AuditoriaService auditoriaService;
     @Autowired private List<ValidarEmitirFactura> emitirValidador;
+    @Autowired private List<ValidarRegistrarPago> pagoValidador;
 
     /** HU-13: solo se factura una obra FINALIZADA; el estado de pago inicial es PENDIENTE. */
     @Transactional
@@ -61,4 +64,25 @@ public class FacturaService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Factura no encontrada"));
         return new DetallesFacturaDTO(factura);
     }
+
+    /** HU-14 y HU-30: registra el pago de una factura pendiente. */
+    @Transactional
+    public DetallesFacturaDTO registrarPago(Long id, RegistrarPagoDTO datos, Usuario actor) {
+        var factura = facturaRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Factura no encontrada"));
+
+        pagoValidador.forEach(v -> v.validate(factura, datos));
+
+        var anterior = Map.<String, Object>of("estado_pago", factura.getEstadoPago().name());
+
+        factura.registrarPago(datos.fechaPago());
+
+        auditoriaService.registrar(actor, "facturas", factura.getId(), "REGISTRAR_PAGO",
+                null, anterior,
+                Map.of("estado_pago", factura.getEstadoPago().name(),
+                        "fecha_pago", factura.getFechaPago().toString()));
+
+        return new DetallesFacturaDTO(factura);
+    }
+
 }

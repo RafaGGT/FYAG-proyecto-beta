@@ -11,4 +11,5 @@ public interface FacturaRepository extends JpaRepository<Factura, Long> {
     boolean existsByNumeroFacturaIgnoreCase(String numeroFactura);
 
     Page<Factura> findByEstadoPago(EstadoPago estadoPago, Pageable pageable);
+    boolean existsByObraIdAndEstadoPago(Long obraId, EstadoPago estadoPago);
 }

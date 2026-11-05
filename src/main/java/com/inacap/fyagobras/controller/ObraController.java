@@ -1,5 +1,6 @@
 package com.inacap.fyagobras.controller;
 
+import com.inacap.fyagobras.domain.factura.repository.FacturaRepository;
 import com.inacap.fyagobras.domain.obra.EstadoObra;
 import com.inacap.fyagobras.domain.obra.ObraService;
 import com.inacap.fyagobras.domain.obra.dto.DetallesObraDTO;
@@ -24,6 +25,8 @@ public class ObraController {
 
     @Autowired
     private ObraService obraService;
+    @Autowired
+    private FacturaRepository facturaRepository;
 
     /** Crear obra desde un presupuesto aprobado. Solo Supervisor. */
     @PreAuthorize("hasRole('SUPERVISOR')")

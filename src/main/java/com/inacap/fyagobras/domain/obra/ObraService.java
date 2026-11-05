@@ -2,6 +2,9 @@ package com.inacap.fyagobras.domain.obra;
 
 import com.inacap.fyagobras.domain.audit.AuditoriaService;
 import com.inacap.fyagobras.domain.costo.repository.CostoRealRepository;
+import com.inacap.fyagobras.domain.factura.EstadoPago;
+import com.inacap.fyagobras.domain.factura.repository.FacturaRepository;
+import com.inacap.fyagobras.domain.obra.dto.CambiarEstadoObraDTO;
 import com.inacap.fyagobras.domain.obra.dto.DetallesObraDTO;
 import com.inacap.fyagobras.domain.obra.dto.RegistrarObraDTO;
 import com.inacap.fyagobras.domain.obra.repository.ObraRepository;
@@ -19,7 +22,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.inacap.fyagobras.domain.obra.dto.CambiarEstadoObraDTO;
 
 import java.util.Map;
 
@@ -32,6 +34,7 @@ public class ObraService {
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private AuditoriaService auditoriaService;
     @Autowired private CostoRealRepository costoRepository;
+    @Autowired private FacturaRepository facturaRepository;
 
     /** HU-05: la obra solo se crea desde un presupuesto aprobado, con tipo vigente y técnico activo. */
     @Transactional
@@ -123,6 +126,12 @@ public class ObraService {
                 throw new ConflictoNegocioException(
                         "No se puede finalizar la obra: faltan los costos reales de materiales y horas técnicas.");
             }
+        }
+        // HU-11: no se puede cancelar una obra con pagos asociados
+        if (destino == EstadoObra.CANCELADA
+                && facturaRepository.existsByObraIdAndEstadoPago(obra.getId(), EstadoPago.PAGADO)) {
+            throw new ConflictoNegocioException(
+                    "La obra no puede cancelarse por tener movimientos financieros asociados.");
         }
 
         obra.cambiarEstado(destino, datos.motivo());
