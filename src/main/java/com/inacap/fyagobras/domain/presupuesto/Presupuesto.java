@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import com.inacap.fyagobras.infra.exception.ConflictoNegocioException;
 
 @Entity
 @Table(name = "presupuestos")
@@ -67,5 +68,24 @@ public class Presupuesto {
         montoTotal = items.stream()
                 .map(ItemPresupuesto::getMonto)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /** HU-02: solo se aprueba con cliente, montos y al menos un ítem. */
+    public void aprobar() {
+        boolean sinItems = items.isEmpty();
+        boolean montoInvalido = items.stream()
+                .anyMatch(i -> i.getMonto() == null || i.getMonto().signum() <= 0);
+        if (cliente == null || sinItems || montoInvalido) {
+            throw new ConflictoNegocioException(
+                    "Para aprobar, el presupuesto debe tener cliente y al menos un ítem con monto.");
+        }
+        this.estado = EstadoPresupuesto.APROBADO;
+        this.fechaAprobacion = LocalDate.now();
+        this.motivoRechazo = null;
+    }
+
+    public void rechazar(String motivo) {
+        this.estado = EstadoPresupuesto.RECHAZADO;
+        this.motivoRechazo = motivo;
     }
 }
