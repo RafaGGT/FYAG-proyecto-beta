@@ -1,52 +1,58 @@
+# Define la sección principal de servicios que se ejecutarán en Docker Compose
 services:
+  
+  # Servicio de la base de datos relacional PostgreSQL
   db:
-    image: postgres:16-alpine
-    container_name: fyag-obras-db
-    restart: unless-stopped
-    environment:
+    image: postgres:16-alpine # Utiliza la imagen oficial ligera de PostgreSQL versión 16 basada en Alpine
+    container_name: fyag-obras-db # Asigna un nombre fijo al contenedor
+    restart: unless-stopped # Configura la política de reinicio automático a menos que se detenga manualmente
+    environment: # Variables de entorno para configurar la base de datos, usando valores por defecto si no están definidas
       POSTGRES_DB: ${DB_NAME:-fyag_obras}
       POSTGRES_USER: ${DB_USER:-fyag}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-fyag}
     ports:
-      - "5432:5432"
+      - "5432:5432" # Mapea el puerto 5432 del contenedor al puerto 5432 de la máquina host
     volumes:
-      - fyag_pgdata:/var/lib/postgresql/data
-    healthcheck:
+      - fyag_pgdata:/var/lib/postgresql/data # Persiste los datos de PostgreSQL en un volumen Docker nombrado
+    healthcheck: # Define un chequeo de salud para verificar que PostgreSQL está listo para aceptar conexiones
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-fyag} -d ${DB_NAME:-fyag_obras}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      interval: 5s # Intervalo de tiempo entre verificaciones
+      timeout: 5s # Tiempo de espera máximo para considerar fallida la prueba
+      retries: 10 # Número de intentos antes de marcar el servicio como no saludable
 
+  # Servicio de la base de datos NoSQL MongoDB
   mongo:
-    image: mongo:7
+    image: mongo:7 # Utiliza la imagen oficial de MongoDB versión 7
     ports:
-      - "27017:27017"
-    healthcheck:
+      - "27017:27017" # Mapea el puerto por defecto de MongoDB (27017) al host
+    healthcheck: # Verificación de salud usando mongosh para comprobar la respuesta del servidor
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
       interval: 5s
       timeout: 5s
       retries: 10
 
+  # Servicio de la aplicación backend principal (Spring Boot)
   app:
-    build: .
-    container_name: fyag-obras-app
-    restart: unless-stopped
-    depends_on:
+    build: . # Construye la imagen de la aplicación utilizando el Dockerfile ubicado en el directorio actual
+    container_name: fyag-obras-app # Asigna un nombre fijo al contenedor de la aplicación
+    restart: unless-stopped # Reinicia automáticamente la aplicación si se detiene de forma inesperada
+    depends_on: # Controla el orden de inicio esperando a que las bases de datos estén sanas
       db:
         condition: service_healthy
       mongo:
         condition: service_healthy
-    environment:
+    environment: # Configura las variables de entorno que consumirá la aplicación Spring Boot
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-fyag_obras}
       DB_USER: ${DB_USER:-fyag}
       DB_PASSWORD: ${DB_PASSWORD:-fyag}
-      JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en el archivo .env (mínimo 32 caracteres)}
+      JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en el archivo .env (mínimo 32 caracteres)} # Falla el inicio si falta la clave JWT en el entorno
       MONGODB_URI: mongodb://mongo:27017/fyag_auditoria
       SERVER_PORT: 8082
     ports:
-      - "8082:8082"
+      - "8082:8082" # Expone la aplicación en el puerto 8082 del host
 
+# Define los volúmenes persistentes gestionados por Docker
 volumes:
-  fyag_pgdata:
+  fyag_pgdata: # Volumen dedicado para almacenar de forma persistente los archivos de datos de PostgreSQL

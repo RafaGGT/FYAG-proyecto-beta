@@ -10,7 +10,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.inacap.fyagobras.domain.audit.AuditoriaService;
+import com.inacap.fyagobras.domain.presupuesto.dto.RechazarPresupuestoDTO;
+import com.inacap.fyagobras.domain.user.Role;
+import com.inacap.fyagobras.domain.user.Usuario;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
 
+import java.math.BigDecimal;
+import java.util.Map;
 import java.util.List;
 
 @Service
@@ -20,6 +28,12 @@ public class PresupuestoService {
     private PresupuestoRepository presupuestoRepository;
     @Autowired
     private ClienteRepository clienteRepository;
+
+    @Autowired
+    private AuditoriaService auditoriaService;
+
+    @Value("${app.presupuesto.umbral-aprobacion}")
+    private BigDecimal umbralAprobacion;
 
     // HU-01: solo con un cliente válido y al menos un ítem; queda PENDIENTE
     @Transactional
@@ -65,5 +79,59 @@ public class PresupuestoService {
     private Presupuesto buscar(Long id) {
         return presupuestoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Presupuesto no encontrado"));
+    }
+
+    @Transactional
+    public DetallesPresupuestoDTO aprobar(Long id, Usuario actor) {
+        var presupuesto = buscar(id);
+        validarPendiente(presupuesto);
+        validarPermisoPorUmbral(presupuesto, actor);
+
+        var anterior = Map.<String, Object>of(
+                "estado", presupuesto.getEstado().name(),
+                "monto_total", presupuesto.getMontoTotal().toPlainString());
+
+        presupuesto.aprobar();
+
+        auditoriaService.registrar(actor, "presupuestos", presupuesto.getId(),
+                "APROBAR_PRESUPUESTO", null, anterior,
+                Map.of("estado", presupuesto.getEstado().name(),
+                        "monto_total", presupuesto.getMontoTotal().toPlainString(),
+                        "fecha_aprobacion", presupuesto.getFechaAprobacion().toString()));
+
+        return new DetallesPresupuestoDTO(presupuesto);
+    }
+
+    @Transactional
+    public DetallesPresupuestoDTO rechazar(Long id, RechazarPresupuestoDTO datos, Usuario actor) {
+        var presupuesto = buscar(id);
+        validarPendiente(presupuesto);
+        validarPermisoPorUmbral(presupuesto, actor);
+
+        var anterior = Map.<String, Object>of(
+                "estado", presupuesto.getEstado().name(),
+                "monto_total", presupuesto.getMontoTotal().toPlainString());
+
+        presupuesto.rechazar(datos.motivo());
+
+        auditoriaService.registrar(actor, "presupuestos", presupuesto.getId(),
+                "RECHAZAR_PRESUPUESTO", datos.motivo(), anterior,
+                Map.of("estado", presupuesto.getEstado().name()));
+
+        return new DetallesPresupuestoDTO(presupuesto);
+    }
+
+    private void validarPendiente(Presupuesto presupuesto) {
+        if (!presupuesto.estaPendiente()) {
+            throw new ConflictoNegocioException("El presupuesto ya fue resuelto (" + presupuesto.getEstado() + ").");
+        }
+    }
+
+    /** HU-03: si el monto supera el umbral, solo GERENCIA puede aprobar o rechazar. */
+    private void validarPermisoPorUmbral(Presupuesto presupuesto, Usuario actor) {
+        boolean superaUmbral = presupuesto.getMontoTotal().compareTo(umbralAprobacion) > 0;
+        if (superaUmbral && actor.getRole() != Role.GERENCIA) {
+            throw new AccessDeniedException("Presupuesto sobre el umbral: solo Gerencia puede decidir.");
+        }
     }
 }
