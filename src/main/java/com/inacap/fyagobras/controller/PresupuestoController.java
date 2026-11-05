@@ -1,5 +1,6 @@
 package com.inacap.fyagobras.controller;
 
+import com.inacap.fyagobras.domain.costo.dto.DetallesCostosDTO;
 import com.inacap.fyagobras.domain.presupuesto.EstadoPresupuesto;
 import com.inacap.fyagobras.domain.presupuesto.PresupuestoService;
 import com.inacap.fyagobras.domain.presupuesto.dto.*;
@@ -110,5 +111,13 @@ public class PresupuestoController {
             @AuthenticationPrincipal Usuario actor) {
 
         return ResponseEntity.ok(presupuestoService.rechazar(id, datos, actor));
+    }
+
+    @PreAuthorize("hasRole('SUPERVISOR')")
+    @GetMapping("/costos")
+    public ResponseEntity<DetallesCostosDTO> obtener(
+            @PathVariable Long obraId,
+            @AuthenticationPrincipal Usuario actor) {
+        return ResponseEntity.ok(costoService.obtener(obraId, actor));
     }
 }

@@ -65,6 +65,9 @@ public class Obra {
         if (destino == EstadoObra.SUSPENDIDA) {
             this.motivoSuspension = motivo.trim();
         }
+        if (destino == EstadoObra.FINALIZADA) {
+            this.fechaTermino = LocalDate.now();
+        }
         this.estado = destino;
     }
 }

@@ -1,6 +1,7 @@
 package com.inacap.fyagobras.domain.obra;
 
 import com.inacap.fyagobras.domain.audit.AuditoriaService;
+import com.inacap.fyagobras.domain.costo.repository.CostoRealRepository;
 import com.inacap.fyagobras.domain.obra.dto.DetallesObraDTO;
 import com.inacap.fyagobras.domain.obra.dto.RegistrarObraDTO;
 import com.inacap.fyagobras.domain.obra.repository.ObraRepository;
@@ -30,6 +31,7 @@ public class ObraService {
     @Autowired private TipoServicioRepository tipoServicioRepository;
     @Autowired private UsuarioRepository usuarioRepository;
     @Autowired private AuditoriaService auditoriaService;
+    @Autowired private CostoRealRepository costoRepository;
 
     /** HU-05: la obra solo se crea desde un presupuesto aprobado, con tipo vigente y técnico activo. */
     @Transactional
@@ -110,6 +112,17 @@ public class ObraService {
         if (destino == EstadoObra.SUSPENDIDA
                 && (datos.motivo() == null || datos.motivo().isBlank())) {
             throw new ConflictoNegocioException("El motivo es obligatorio al suspender una obra.");
+        }
+        // HU-10: no se puede finalizar sin técnico asignado ni costos reales registrados
+        if (destino == EstadoObra.FINALIZADA) {
+            if (obra.getTecnico() == null) {
+                throw new ConflictoNegocioException(
+                        "No se puede finalizar la obra: se requiere asignar un técnico responsable.");
+            }
+            if (!costoRepository.existsByObraId(obra.getId())) {
+                throw new ConflictoNegocioException(
+                        "No se puede finalizar la obra: faltan los costos reales de materiales y horas técnicas.");
+            }
         }
 
         obra.cambiarEstado(destino, datos.motivo());
