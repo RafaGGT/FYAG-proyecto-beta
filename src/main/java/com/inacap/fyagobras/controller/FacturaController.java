@@ -4,6 +4,7 @@ import com.inacap.fyagobras.domain.factura.EstadoPago;
 import com.inacap.fyagobras.domain.factura.FacturaService;
 import com.inacap.fyagobras.domain.factura.dto.DetallesFacturaDTO;
 import com.inacap.fyagobras.domain.factura.dto.EmitirFacturaDTO;
+import com.inacap.fyagobras.domain.factura.dto.RegistrarPagoDTO;
 import com.inacap.fyagobras.domain.user.Usuario;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,5 +53,16 @@ public class FacturaController {
     @GetMapping("/{id}")
     public ResponseEntity<DetallesFacturaDTO> detalle(@PathVariable Long id) {
         return ResponseEntity.ok(facturaService.obtener(id));
+    }
+
+    /** Registrar el pago de una factura pendiente. Solo Finanzas. */
+    @PreAuthorize("hasRole('FINANZAS')")
+    @PatchMapping("/{id}/pago")
+    public ResponseEntity<DetallesFacturaDTO> registrarPago(
+            @PathVariable Long id,
+            @RequestBody @Valid RegistrarPagoDTO datos,
+            @AuthenticationPrincipal Usuario actor) {
+
+        return ResponseEntity.ok(facturaService.registrarPago(id, datos, actor));
     }
 }

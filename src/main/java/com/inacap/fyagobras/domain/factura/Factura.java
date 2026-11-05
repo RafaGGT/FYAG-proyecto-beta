@@ -65,4 +65,10 @@ public class Factura {
         this.estadoPago = EstadoPago.PENDIENTE;
         this.anulada = false;
     }
+
+    /** HU-14: pasa de PENDIENTE a PAGADO registrando la fecha de pago. */
+    public void registrarPago(LocalDate fechaPago) {
+        this.estadoPago = EstadoPago.PAGADO;
+        this.fechaPago = fechaPago;
+    }
 }
