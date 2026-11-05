@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface CostoRealRepository extends JpaRepository<CostoReal, Long> {
     Optional<CostoReal> findByObraId(Long obraId);
+    boolean existsByObraId(Long obraId);
 }
