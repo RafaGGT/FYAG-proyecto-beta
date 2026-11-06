@@ -2,6 +2,7 @@ package com.inacap.fyagobras.controller;
 
 import com.inacap.fyagobras.domain.factura.EstadoPago;
 import com.inacap.fyagobras.domain.factura.FacturaService;
+import com.inacap.fyagobras.domain.factura.dto.AnularPagoDTO;
 import com.inacap.fyagobras.domain.factura.dto.DetallesFacturaDTO;
 import com.inacap.fyagobras.domain.factura.dto.EmitirFacturaDTO;
 import com.inacap.fyagobras.domain.factura.dto.RegistrarPagoDTO;
@@ -65,4 +66,16 @@ public class FacturaController {
 
         return ResponseEntity.ok(facturaService.registrarPago(id, datos, actor));
     }
+
+    /** Anular un pago registrado por error (nota de crédito interna). Solo Finanzas. */
+    @PreAuthorize("hasRole('FINANZAS')")
+    @PatchMapping("/{id}/anular-pago")
+    public ResponseEntity<DetallesFacturaDTO> anularPago(
+            @PathVariable Long id,
+            @RequestBody @Valid AnularPagoDTO datos,
+            @AuthenticationPrincipal Usuario actor) {
+
+        return ResponseEntity.ok(facturaService.anularPago(id, datos, actor));
+    }
+
 }
