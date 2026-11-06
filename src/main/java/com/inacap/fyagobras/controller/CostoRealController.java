@@ -45,4 +45,6 @@ public class CostoRealController {
     public ResponseEntity<RentabilidadDTO> rentabilidad(@PathVariable Long obraId) {
         return ResponseEntity.ok(costoService.rentabilidad(obraId));
     }
+
+
 }
