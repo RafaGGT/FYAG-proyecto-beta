@@ -16,4 +16,6 @@ public interface ObraRepository extends JpaRepository<Obra, Long>, JpaSpecificat
     Page<Obra> findByTecnicoId(Long tecnicoId, Pageable pageable);
 
     Page<Obra> findByTecnicoIdAndEstado(Long tecnicoId, EstadoObra estado, Pageable pageable);
+
+    long countByEstado(EstadoObra estado);
 }

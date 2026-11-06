@@ -18,4 +18,6 @@ public interface PresupuestoRepository extends JpaRepository<Presupuesto, Long> 
     // Número correlativo que entrega la secuencia de PostgreSQL
     @Query(value = "SELECT nextval('seq_numero_presupuesto')", nativeQuery = true)
     Long siguienteNumero();
+
+    long countByEstado(EstadoPresupuesto estado);
 }
