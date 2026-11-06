@@ -71,4 +71,13 @@ public class Factura {
         this.estadoPago = EstadoPago.PAGADO;
         this.fechaPago = fechaPago;
     }
+
+    /** HU-29: anula el pago por error; la factura vuelve a PENDIENTE y queda registro de quién, cuándo y por qué. */
+    public void anularPago(String motivo, Long usuarioId) {
+        this.estadoPago = EstadoPago.PENDIENTE;
+        this.fechaPago = null;
+        this.motivoAnulacion = motivo;
+        this.anuladaPor = usuarioId;
+        this.fechaAnulacion = LocalDateTime.now();
+    }
 }

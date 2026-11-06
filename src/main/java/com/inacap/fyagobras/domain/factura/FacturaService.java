@@ -1,6 +1,6 @@
 package com.inacap.fyagobras.domain.factura;
-
 import com.inacap.fyagobras.domain.audit.AuditoriaService;
+import com.inacap.fyagobras.domain.factura.dto.AnularPagoDTO;
 import com.inacap.fyagobras.domain.factura.dto.DetallesFacturaDTO;
 import com.inacap.fyagobras.domain.factura.dto.EmitirFacturaDTO;
 import com.inacap.fyagobras.domain.factura.dto.RegistrarPagoDTO;
@@ -9,6 +9,7 @@ import com.inacap.fyagobras.domain.factura.validation.create.ValidarEmitirFactur
 import com.inacap.fyagobras.domain.factura.validation.pago.ValidarRegistrarPago;
 import com.inacap.fyagobras.domain.obra.repository.ObraRepository;
 import com.inacap.fyagobras.domain.user.Usuario;
+import com.inacap.fyagobras.infra.exception.ConflictoNegocioException;
 import com.inacap.fyagobras.infra.exception.RecursoNoEncontradoException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -81,6 +82,29 @@ public class FacturaService {
                 null, anterior,
                 Map.of("estado_pago", factura.getEstadoPago().name(),
                         "fecha_pago", factura.getFechaPago().toString()));
+
+        return new DetallesFacturaDTO(factura);
+    }
+
+    /** HU-29: anula un pago registrado por error mediante una nota de crédito interna. No elimina nada. */
+    @Transactional
+    public DetallesFacturaDTO anularPago(Long id, AnularPagoDTO datos, Usuario actor) {
+        var factura = facturaRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Factura no encontrada"));
+
+        if (factura.getEstadoPago() != EstadoPago.PAGADO) {
+            throw new ConflictoNegocioException("Solo se puede anular el pago de una factura PAGADA.");
+        }
+
+        var anterior = Map.<String, Object>of(
+                "estado_pago", factura.getEstadoPago().name(),
+                "fecha_pago", factura.getFechaPago().toString());
+
+        factura.anularPago(datos.motivo().trim(), actor.getId());
+
+        auditoriaService.registrar(actor, "facturas", factura.getId(), "ANULAR_PAGO",
+                datos.motivo().trim(), anterior,
+                Map.of("estado_pago", factura.getEstadoPago().name()));
 
         return new DetallesFacturaDTO(factura);
     }
