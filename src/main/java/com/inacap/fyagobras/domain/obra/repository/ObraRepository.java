@@ -5,8 +5,9 @@ import com.inacap.fyagobras.domain.obra.Obra;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-public interface ObraRepository extends JpaRepository<Obra, Long> {
+public interface ObraRepository extends JpaRepository<Obra, Long>, JpaSpecificationExecutor<Obra> {
 
     boolean existsByPresupuestoId(Long presupuestoId);
 

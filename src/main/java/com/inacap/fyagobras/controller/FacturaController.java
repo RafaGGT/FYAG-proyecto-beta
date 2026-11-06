@@ -2,10 +2,7 @@ package com.inacap.fyagobras.controller;
 
 import com.inacap.fyagobras.domain.factura.EstadoPago;
 import com.inacap.fyagobras.domain.factura.FacturaService;
-import com.inacap.fyagobras.domain.factura.dto.AnularPagoDTO;
-import com.inacap.fyagobras.domain.factura.dto.DetallesFacturaDTO;
-import com.inacap.fyagobras.domain.factura.dto.EmitirFacturaDTO;
-import com.inacap.fyagobras.domain.factura.dto.RegistrarPagoDTO;
+import com.inacap.fyagobras.domain.factura.dto.*;
 import com.inacap.fyagobras.domain.user.Usuario;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +15,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/facturas")
@@ -76,6 +75,15 @@ public class FacturaController {
             @AuthenticationPrincipal Usuario actor) {
 
         return ResponseEntity.ok(facturaService.anularPago(id, datos, actor));
+    }
+
+    /** HU-15: clientes con pagos pendientes (?busqueda=RUT o razón social). Finanzas y Gerencia. */
+    @PreAuthorize("hasAnyRole('FINANZAS','GERENCIA')")
+    @GetMapping("/clientes-pendientes")
+    public ResponseEntity<List<ClientePendienteDTO>> clientesPendientes(
+            @RequestParam(required = false) String busqueda) {
+
+        return ResponseEntity.ok(facturaService.clientesConPagosPendientes(busqueda));
     }
 
 }
