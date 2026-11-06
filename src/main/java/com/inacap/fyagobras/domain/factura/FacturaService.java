@@ -1,9 +1,6 @@
 package com.inacap.fyagobras.domain.factura;
 import com.inacap.fyagobras.domain.audit.AuditoriaService;
-import com.inacap.fyagobras.domain.factura.dto.AnularPagoDTO;
-import com.inacap.fyagobras.domain.factura.dto.DetallesFacturaDTO;
-import com.inacap.fyagobras.domain.factura.dto.EmitirFacturaDTO;
-import com.inacap.fyagobras.domain.factura.dto.RegistrarPagoDTO;
+import com.inacap.fyagobras.domain.factura.dto.*;
 import com.inacap.fyagobras.domain.factura.repository.FacturaRepository;
 import com.inacap.fyagobras.domain.factura.validation.create.ValidarEmitirFactura;
 import com.inacap.fyagobras.domain.factura.validation.pago.ValidarRegistrarPago;
@@ -17,6 +14,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -107,6 +106,22 @@ public class FacturaService {
                 Map.of("estado_pago", factura.getEstadoPago().name()));
 
         return new DetallesFacturaDTO(factura);
+    }
+
+    /** HU-15: clientes con al menos una factura PENDIENTE, con monto adeudado y días de atraso. */
+    @Transactional(readOnly = true)
+    public List<ClientePendienteDTO> clientesConPagosPendientes(String busqueda) {
+        var hoy = LocalDate.now();
+        var filtro = (busqueda == null) ? "" : busqueda.trim();
+
+        return facturaRepository.clientesConPagosPendientes(filtro).stream()
+                .map(c -> new ClientePendienteDTO(
+                        c.getClienteId(), c.getRut(), c.getRazonSocial(),
+                        c.getFacturasPendientes(), c.getMontoAdeudado(),
+                        c.getVencimientoMasAntiguo(),
+                        // Días de atraso desde el vencimiento más antiguo; 0 si aún no vence
+                        Math.max(0, ChronoUnit.DAYS.between(c.getVencimientoMasAntiguo(), hoy))))
+                .toList();
     }
 
 }
