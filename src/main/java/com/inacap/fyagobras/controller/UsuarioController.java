@@ -126,7 +126,9 @@ public class UsuarioController {
     @PreAuthorize("hasAnyRole('ADMIN','GERENCIA') or #username == authentication.name")
     // Define un endpoint GET para buscar un usuario por su username en la ruta
     @GetMapping("/{username}")
-    public ResponseEntity<DetallesUsuarioDTO> obtenerPorUsername(@PathVariable String username) {    var usuario = usuarioService.obtenerPorUsername(username);
+    public ResponseEntity<DetallesUsuarioDTO> obtenerPorUsername(@PathVariable String username) {
+        // Busca el usuario mediante el nombre de usuario recibido.
+        var usuario = usuarioService.obtenerPorUsername(username);
         // Retorna los detalles del usuario encontrado con un estado 200 OK
         return ResponseEntity.ok(new DetallesUsuarioDTO(usuario));
     }
@@ -201,8 +203,10 @@ public class UsuarioController {
     // Define un endpoint POST para restablecer la contraseña y generar claves temporales
     @PostMapping("/{username}/reset-password")
     public ResponseEntity<CredencialesTemporalesDTO> resetearPassword(@PathVariable String username) {
+        // Solicita al servicio el restablecimiento de la contraseña.
+        var credenciales = usuarioService.resetearPassword(username);
         // Retorna las credenciales temporales generadas por el servicio con un estado 200 OK
-        return ResponseEntity.ok(usuarioService.resetearPassword(username));
+        return ResponseEntity.ok(credenciales);
     }
 
     /**

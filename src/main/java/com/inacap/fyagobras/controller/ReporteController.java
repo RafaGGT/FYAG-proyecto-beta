@@ -37,7 +37,10 @@ public class ReporteController {
             @RequestParam(required = false) Long tecnicoId,
             @RequestParam(required = false) EstadoObra estado) {
 
-        return descarga(reporteService.obras(formato, desde, hasta, clienteId, tecnicoId, estado));
+                // Solicita al servicio el reporte aplicando los filtros recibidos.
+                var archivo = reporteService.obras(formato, desde, hasta, clienteId, tecnicoId, estado);
+                // Devuelve el archivo generado como una descarga HTTP.
+                return descarga(archivo);
     }
 
     /** HU-19: reporte de cobranzas (PDF o Excel). Finanzas y Gerencia. */
@@ -50,13 +53,21 @@ public class ReporteController {
             @RequestParam(required = false) Long clienteId,
             @RequestParam(required = false) EstadoPago estadoPago) {
 
-        return descarga(reporteService.cobranzas(formato, desde, hasta, clienteId, estadoPago));
+        // Solicita al servicio el reporte de cobranzas con los filtros recibidos.
+        var archivo = reporteService.cobranzas(formato, desde, hasta, clienteId, estadoPago);
+        // Devuelve el archivo generado como una descarga HTTP.
+        return descarga(archivo);
     }
 
     private ResponseEntity<byte[]> descarga(ArchivoReporte archivo) {
+        // Configura el nombre del archivo para que el navegador lo descargue.
+        var disposicion = ContentDisposition.attachment()
+                .filename(archivo.nombreArchivo())
+                .build()
+                .toString();
+        // Construye la respuesta con el tipo MIME y el contenido del archivo.
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        ContentDisposition.attachment().filename(archivo.nombreArchivo()).build().toString())
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposicion)
                 .contentType(MediaType.parseMediaType(archivo.contentType()))
                 .body(archivo.contenido());
     }

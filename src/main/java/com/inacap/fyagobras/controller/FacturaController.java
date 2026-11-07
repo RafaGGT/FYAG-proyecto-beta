@@ -33,8 +33,11 @@ public class FacturaController {
             @AuthenticationPrincipal Usuario actor,
             UriComponentsBuilder uriComponentsBuilder) {
 
+        // Envía los datos al servicio para emitir la factura.
         var creada = facturaService.emitir(datos, actor);
+        // Construye la URI del recurso recién creado.
         var uri = uriComponentsBuilder.path("/facturas/{id}").buildAndExpand(creada.id()).toUri();
+        // Responde con estado 201 y los datos de la factura.
         return ResponseEntity.created(uri).body(creada);
     }
 
@@ -45,14 +48,20 @@ public class FacturaController {
             @RequestParam(required = false) EstadoPago estadoPago,
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable paginacion) {
 
-        return ResponseEntity.ok(new PagedModel<>(facturaService.listar(estadoPago, paginacion)));
+        // Consulta las facturas aplicando el filtro y la paginación.
+        var facturas = facturaService.listar(estadoPago, paginacion);
+        // Envuelve el resultado paginado y responde con estado 200.
+        return ResponseEntity.ok(new PagedModel<>(facturas));
     }
 
     /** Detalle de una factura. Finanzas y Gerencia. */
     @PreAuthorize("hasAnyRole('FINANZAS','GERENCIA')")
     @GetMapping("/{id}")
     public ResponseEntity<DetallesFacturaDTO> detalle(@PathVariable Long id) {
-        return ResponseEntity.ok(facturaService.obtener(id));
+        // Obtiene la factura solicitada desde el servicio.
+        var factura = facturaService.obtener(id);
+        // Devuelve el detalle encontrado.
+        return ResponseEntity.ok(factura);
     }
 
     /** Registrar el pago de una factura pendiente. Solo Finanzas. */
@@ -63,7 +72,10 @@ public class FacturaController {
             @RequestBody @Valid RegistrarPagoDTO datos,
             @AuthenticationPrincipal Usuario actor) {
 
-        return ResponseEntity.ok(facturaService.registrarPago(id, datos, actor));
+        // Registra el pago asociado a la factura.
+        var factura = facturaService.registrarPago(id, datos, actor);
+        // Devuelve la factura con su estado actualizado.
+        return ResponseEntity.ok(factura);
     }
 
     /** Anular un pago registrado por error (nota de crédito interna). Solo Finanzas. */
@@ -74,7 +86,10 @@ public class FacturaController {
             @RequestBody @Valid AnularPagoDTO datos,
             @AuthenticationPrincipal Usuario actor) {
 
-        return ResponseEntity.ok(facturaService.anularPago(id, datos, actor));
+        // Solicita al servicio la anulación del pago.
+        var factura = facturaService.anularPago(id, datos, actor);
+        // Devuelve la factura actualizada.
+        return ResponseEntity.ok(factura);
     }
 
     /** HU-15: clientes con pagos pendientes (?busqueda=RUT o razón social). Finanzas y Gerencia. */
@@ -83,7 +98,10 @@ public class FacturaController {
     public ResponseEntity<List<ClientePendienteDTO>> clientesPendientes(
             @RequestParam(required = false) String busqueda) {
 
-        return ResponseEntity.ok(facturaService.clientesConPagosPendientes(busqueda));
+        // Busca los clientes que mantienen pagos pendientes.
+        var clientes = facturaService.clientesConPagosPendientes(busqueda);
+        // Devuelve la lista resultante.
+        return ResponseEntity.ok(clientes);
     }
 
 }

@@ -24,10 +24,12 @@ public class DashboardService {
     /** HU-16: los cuatro indicadores del panel, calculados al momento de la consulta. */
     @Transactional(readOnly = true)
     public DashboardDTO obtener() {
+        // Determina el mes actual usando la zona horaria del negocio.
         var mes = YearMonth.now(ZoneId.of("America/Santiago"));
         LocalDate desde = mes.atDay(1);
         LocalDate hasta = mes.atEndOfMonth();
 
+        // Consulta cada indicador y construye una respuesta única para el panel.
         return new DashboardDTO(
                 facturaRepository.sumaEmitidaEntre(desde, hasta),
                 presupuestoRepository.countByEstado(EstadoPresupuesto.APROBADO),

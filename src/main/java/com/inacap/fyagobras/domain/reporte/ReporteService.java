@@ -41,8 +41,10 @@ public class ReporteService {
     @Transactional(readOnly = true)
     public ArchivoReporte obras(FormatoReporte formato, LocalDate desde, LocalDate hasta,
                                 Long clienteId, Long tecnicoId, EstadoObra estado) {
+        // Valida que el intervalo de fechas sea coherente.
         validarRango(desde, hasta);
 
+        // Construye la descripción de los filtros aplicados.
         var filtros = new ArrayList<String>();
         if (desde != null) filtros.add("Inicio desde: " + FECHA.format(desde));
         if (hasta != null) filtros.add("Inicio hasta: " + FECHA.format(hasta));
@@ -54,9 +56,11 @@ public class ReporteService {
         if (estado != null) filtros.add("Estado: " + estado);
         if (filtros.isEmpty()) filtros.add("Sin filtros (todas las obras)");
 
+        // Consulta las obras aplicando todos los filtros recibidos.
         var obras = obraRepository.findAll(
                 ReporteSpecs.obras(desde, hasta, clienteId, tecnicoId, estado), Sort.by("id"));
 
+        // Convierte cada obra en una fila del reporte.
         var filas = new ArrayList<List<Object>>();
         for (var o : obras) {
             filas.add(List.<Object>of(
@@ -70,6 +74,7 @@ public class ReporteService {
                     fecha(o.getFechaTermino())));
         }
 
+        // Calcula los totales agrupados por estado.
         var resumen = new ArrayList<String>();
         resumen.add("Total de obras: " + obras.size());
         for (var e : EstadoObra.values()) {
@@ -77,6 +82,7 @@ public class ReporteService {
             if (cantidad > 0) resumen.add(e + ": " + cantidad);
         }
 
+        // Empaqueta los datos en el formato solicitado.
         var datos = new ReporteDatos("Reporte de obras", filtros,
                 List.of("Obra", "Cliente", "Tipo de servicio", "Técnico", "Estado", "Inicio", "Término"),
                 filas, resumen);
@@ -87,9 +93,11 @@ public class ReporteService {
     @Transactional(readOnly = true)
     public ArchivoReporte cobranzas(FormatoReporte formato, LocalDate desde, LocalDate hasta,
                                     Long clienteId, EstadoPago estadoPago) {
+        // Valida el rango y prepara el formato monetario chileno.
         validarRango(desde, hasta);
         var moneda = NumberFormat.getCurrencyInstance(new Locale("es", "CL"));
 
+        // Describe los filtros utilizados en la consulta.
         var filtros = new ArrayList<String>();
         if (desde != null) filtros.add("Emisión desde: " + FECHA.format(desde));
         if (hasta != null) filtros.add("Emisión hasta: " + FECHA.format(hasta));
@@ -97,9 +105,11 @@ public class ReporteService {
         if (estadoPago != null) filtros.add("Estado de pago: " + estadoPago);
         if (filtros.isEmpty()) filtros.add("Sin filtros (todas las facturas)");
 
+        // Recupera las facturas que cumplen los filtros.
         var facturas = facturaRepository.findAll(
                 ReporteSpecs.facturas(desde, hasta, clienteId, estadoPago), Sort.by("id"));
 
+        // Construye las filas y acumula montos totales y pendientes.
         var filas = new ArrayList<List<Object>>();
         BigDecimal total = BigDecimal.ZERO;
         BigDecimal pendiente = BigDecimal.ZERO;
@@ -119,6 +129,7 @@ public class ReporteService {
             }
         }
 
+        // Resume los montos para mostrar el resultado ejecutivo.
         var resumen = List.of(
                 "Total de facturas: " + facturas.size(),
                 "Monto total facturado: " + moneda.format(total),
@@ -132,7 +143,9 @@ public class ReporteService {
     }
 
     private ArchivoReporte empaquetar(ReporteDatos datos, FormatoReporte formato, String base) {
+        // Usa la fecha actual para generar un nombre de archivo único.
         var hoy = LocalDate.now();
+        // Delega la generación al componente correspondiente al formato.
         return switch (formato) {
             case PDF -> new ArchivoReporte(pdfGenerador.generar(datos),
                     base + "-" + hoy + ".pdf", "application/pdf");
@@ -142,6 +155,7 @@ public class ReporteService {
     }
 
     private void validarRango(LocalDate desde, LocalDate hasta) {
+        // Rechaza rangos invertidos antes de consultar la base de datos.
         if (desde != null && hasta != null && desde.isAfter(hasta)) {
             throw new ConflictoNegocioException("La fecha 'desde' no puede ser posterior a la fecha 'hasta'.");
         }

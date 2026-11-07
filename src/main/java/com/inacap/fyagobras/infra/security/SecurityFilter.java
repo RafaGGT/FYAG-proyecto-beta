@@ -16,8 +16,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-// Filtro JWT: se ejecuta en cada request y decide si el usuario queda autenticado.
-// Lee el token, valida al usuario contra la BD (activo, cambio de clave pendiente) y carga su rol.
+/**
+ * Filtro JWT que valida la identidad del usuario en cada solicitud protegida.
+ *
+ * <p>Extrae el token Bearer, lo valida, consulta el usuario en la base de datos
+ * y carga sus autoridades en el contexto de Spring Security. También aplica
+ * las restricciones para cuentas desactivadas o con cambio de contraseña
+ * pendiente.</p>
+ */
 @Component
 public class SecurityFilter extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(SecurityFilter.class);
@@ -31,7 +37,16 @@ public class SecurityFilter extends OncePerRequestFilter {
     @Autowired
     private ErrorSeguridadHandler errorSeguridadHandler;
 
-    // Flujo: ruta pública -> token -> usuario activo -> cambio de clave -> autenticar
+    /**
+     * Procesa una solicitud y establece la autenticación si el JWT y el usuario
+     * son válidos.
+     *
+     * @param request solicitud HTTP actual
+     * @param response respuesta HTTP que puede recibir un error de seguridad
+     * @param filterChain cadena de filtros restante
+     * @throws ServletException si falla un filtro posterior
+     * @throws IOException si ocurre un error de entrada o salida
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         // Saltar rutas públicas y preflight OPTIONS
@@ -86,6 +101,12 @@ public class SecurityFilter extends OncePerRequestFilter {
     }
 
     // Extrae el token del header "Authorization: Bearer <token>"
+    /**
+     * Extrae el token desde el encabezado {@code Authorization: Bearer ...}.
+     *
+     * @param request solicitud cuyo encabezado se consultará
+     * @return token JWT sin el prefijo {@code Bearer }, o {@code null} si falta
+     */
     private String recuperarToken(HttpServletRequest request) {
         var authorizationHeader = request.getHeader("Authorization");
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
@@ -95,6 +116,13 @@ public class SecurityFilter extends OncePerRequestFilter {
     }
 
     // Únicas rutas permitidas mientras el usuario tenga contraseña temporal
+    /**
+     * Indica si la ruta está permitida mientras se exige cambiar la contraseña.
+     *
+     * @param method método HTTP de la solicitud
+     * @param path ruta solicitada
+     * @return {@code true} para consultar el perfil o actualizar la contraseña
+     */
     private boolean permitidaConCambioPendiente(String method, String path) {
         return ("GET".equals(method) && path.equals("/usuarios/me"))
                 || ("PATCH".equals(method) && path.equals("/usuarios/me/password"));

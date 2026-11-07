@@ -49,8 +49,10 @@ public class ClienteController {
             @RequestParam(required = false) String busqueda,
             @PageableDefault(size = 20, sort = "razonSocial") Pageable paginacion) {
 
+        // Consulta los clientes aplicando búsqueda y paginación.
+        var clientes = clienteService.listar(busqueda, paginacion);
         // Retorna la página de clientes filtrada y envuelta en un PagedModel con estado 200 OK
-        return ResponseEntity.ok(new PagedModel<>(clienteService.listar(busqueda, paginacion)));
+        return ResponseEntity.ok(new PagedModel<>(clientes));
     }
 
     /** Ver el detalle de un cliente. */
@@ -59,8 +61,10 @@ public class ClienteController {
     // Define un endpoint GET para consultar los detalles de un cliente específico por su ID
     @GetMapping("/{id}")
     public ResponseEntity<DetallesClienteDTO> detalle(@PathVariable Long id) {
+        // Busca el cliente solicitado por su identificador.
+        var cliente = clienteService.obtener(id);
         // Retorna los detalles del cliente obtenido con estado 200 OK
-        return ResponseEntity.ok(clienteService.obtener(id));
+        return ResponseEntity.ok(cliente);
     }
 
     /** Editar datos de contacto. El RUT no se puede cambiar. Solo Finanzas. */
@@ -72,7 +76,9 @@ public class ClienteController {
             @PathVariable Long id,
             @RequestBody @Valid ModificarClienteDTO datos) {
 
+        // Actualiza los datos de contacto del cliente.
+        var cliente = clienteService.actualizar(id, datos);
         // Actualiza el cliente a través del servicio y retorna el resultado con estado 200 OK
-        return ResponseEntity.ok(clienteService.actualizar(id, datos));
+        return ResponseEntity.ok(cliente);
     }
 }

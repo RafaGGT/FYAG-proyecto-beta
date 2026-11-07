@@ -20,6 +20,9 @@ public class DashboardController {
     @PreAuthorize("hasAnyRole('GERENCIA','FINANZAS')")
     @GetMapping
     public ResponseEntity<DashboardDTO> obtener() {
-        return ResponseEntity.ok(dashboardService.obtener());
+        // Solicita al servicio los indicadores del panel gerencial.
+        var dashboard = dashboardService.obtener();
+        // Devuelve los datos del panel con estado 200.
+        return ResponseEntity.ok(dashboard);
     }
 }
