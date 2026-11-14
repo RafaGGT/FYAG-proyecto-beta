@@ -52,6 +52,7 @@ public class Obra {
 
     public Obra(String nombre, String descripcion, LocalDate fechaInicio,
                 Presupuesto presupuesto, TipoServicio tipoServicio, Usuario tecnico) {
+        // Inicializa la obra con sus relaciones y estado de trabajo inicial.
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.fechaInicio = fechaInicio;
@@ -62,12 +63,15 @@ public class Obra {
     }
 
     public void cambiarEstado(EstadoObra destino, String motivo) {
+        // Guarda el motivo únicamente cuando la obra queda suspendida.
         if (destino == EstadoObra.SUSPENDIDA) {
             this.motivoSuspension = motivo.trim();
         }
+        // Registra la fecha en que una obra pasa a estar finalizada.
         if (destino == EstadoObra.FINALIZADA) {
             this.fechaTermino = LocalDate.now();
         }
+        // Finalmente actualiza el estado de la obra.
         this.estado = destino;
     }
 }

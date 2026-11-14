@@ -68,14 +68,17 @@ public class Factura {
 
     /** HU-14: pasa de PENDIENTE a PAGADO registrando la fecha de pago. */
     public void registrarPago(LocalDate fechaPago) {
+        // Marca la factura como pagada y conserva la fecha informada.
         this.estadoPago = EstadoPago.PAGADO;
         this.fechaPago = fechaPago;
     }
 
     /** HU-29: anula el pago por error; la factura vuelve a PENDIENTE y queda registro de quién, cuándo y por qué. */
     public void anularPago(String motivo, Long usuarioId) {
+        // Devuelve la factura a pendiente sin eliminar el registro original.
         this.estadoPago = EstadoPago.PENDIENTE;
         this.fechaPago = null;
+        // Conserva quién, cuándo y por qué se anuló el pago.
         this.motivoAnulacion = motivo;
         this.anuladaPor = usuarioId;
         this.fechaAnulacion = LocalDateTime.now();

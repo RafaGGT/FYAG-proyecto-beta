@@ -1,7 +1,10 @@
-package com.inacap.fyagobras.domain.factura;
+package com.inacap.fyagobras.factura;
 
 import com.inacap.fyagobras.domain.audit.AuditoriaService;
 import com.inacap.fyagobras.domain.cliente.Cliente;
+import com.inacap.fyagobras.domain.factura.EstadoPago;
+import com.inacap.fyagobras.domain.factura.Factura;
+import com.inacap.fyagobras.domain.factura.FacturaService;
 import com.inacap.fyagobras.domain.factura.dto.EmitirFacturaDTO;
 import com.inacap.fyagobras.domain.factura.dto.RegistrarPagoDTO;
 import com.inacap.fyagobras.domain.factura.repository.FacturaRepository;

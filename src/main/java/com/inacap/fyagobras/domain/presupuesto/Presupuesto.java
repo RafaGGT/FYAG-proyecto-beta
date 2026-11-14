@@ -58,13 +58,17 @@ public class Presupuesto {
     }
 
     public boolean estaPendiente() {
+        // Indica si el presupuesto todavía puede ser editado o resuelto.
         return estado == EstadoPresupuesto.PENDIENTE;
     }
 
     // Cambia los ítems y recalcula el monto total (suma de los ítems)
     public void reemplazarItems(List<ItemPresupuestoDTO> nuevos) {
+        // Elimina los ítems anteriores para reemplazarlos por la nueva versión.
         items.clear();
+        // Crea cada ítem vinculándolo con este presupuesto.
         nuevos.forEach(i -> items.add(new ItemPresupuesto(this, i.descripcion(), i.monto())));
+        // Recalcula el total a partir de los montos actuales.
         montoTotal = items.stream()
                 .map(ItemPresupuesto::getMonto)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -72,6 +76,7 @@ public class Presupuesto {
 
     /** HU-02: solo se aprueba con cliente, montos y al menos un ítem. */
     public void aprobar() {
+        // Comprueba que el presupuesto tenga datos suficientes para aprobarse.
         boolean sinItems = items.isEmpty();
         boolean montoInvalido = items.stream()
                 .anyMatch(i -> i.getMonto() == null || i.getMonto().signum() <= 0);
@@ -79,12 +84,14 @@ public class Presupuesto {
             throw new ConflictoNegocioException(
                     "Para aprobar, el presupuesto debe tener cliente y al menos un ítem con monto.");
         }
+        // Cambia el estado y registra la fecha de aprobación.
         this.estado = EstadoPresupuesto.APROBADO;
         this.fechaAprobacion = LocalDate.now();
         this.motivoRechazo = null;
     }
 
     public void rechazar(String motivo) {
+        // Marca el presupuesto como rechazado y conserva el motivo.
         this.estado = EstadoPresupuesto.RECHAZADO;
         this.motivoRechazo = motivo;
     }

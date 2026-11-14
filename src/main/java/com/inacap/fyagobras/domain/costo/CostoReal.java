@@ -37,16 +37,19 @@ public class CostoReal {
     }
 
     public void actualizar(BigDecimal materiales, BigDecimal horasTecnicas, BigDecimal valorHora) {
+        // Reemplaza los tres componentes que forman el costo real.
         this.materiales = materiales;
         this.horasTecnicas = horasTecnicas;
         this.valorHora = valorHora;
     }
 
     public BigDecimal costoManoObra() {
+        // Calcula las horas trabajadas por el valor de cada hora.
         return horasTecnicas.multiply(valorHora).setScale(2, RoundingMode.HALF_UP);
     }
 
     public BigDecimal costoTotal() {
+        // Suma materiales y mano de obra para obtener el costo final.
         return materiales.add(costoManoObra());
     }
 }

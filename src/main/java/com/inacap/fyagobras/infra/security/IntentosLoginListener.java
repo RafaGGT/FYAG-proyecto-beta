@@ -7,20 +7,31 @@ import org.springframework.security.authentication.event.AuthenticationFailureBa
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.stereotype.Component;
 
-// Escucha los eventos de Spring Security para contar los intentos de login
+/**
+ * Escucha los eventos de autenticación de Spring Security para actualizar el
+ * contador de intentos de inicio de sesión de cada usuario.
+ */
 @Component
 public class IntentosLoginListener {
 
     @Autowired
     private UsuarioService usuarioService;
 
-    // Clave incorrecta: suma un intento fallido (al llegar al máximo se bloquea la cuenta)
+    /**
+     * Registra un intento fallido por credenciales incorrectas.
+     *
+     * @param evento evento de autenticación fallida emitido por Spring Security
+     */
     @EventListener
     public void alFallar(AuthenticationFailureBadCredentialsEvent evento) {
         usuarioService.registrarFalloLogin(evento.getAuthentication().getName());
     }
 
-    // Autenticación exitosa: reinicia el contador de intentos fallidos
+    /**
+     * Registra una autenticación exitosa y reinicia el contador de fallos.
+     *
+     * @param evento evento de autenticación exitosa emitido por Spring Security
+     */
     @EventListener
     public void alAutenticar(AuthenticationSuccessEvent evento) {
         usuarioService.registrarExitoLogin(evento.getAuthentication().getName());

@@ -42,8 +42,11 @@ public class PresupuestoController {
             @RequestBody @Valid RegistrarPresupuestoDTO datos,
             UriComponentsBuilder uriComponentsBuilder) {
 
+        // Registra el presupuesto con los datos validados.
         var creado = presupuestoService.registrar(datos);
+        // Construye la URI del presupuesto creado.
         var uri = uriComponentsBuilder.path("/presupuestos/{id}").buildAndExpand(creado.id()).toUri();
+        // Responde con estado 201 y el detalle del presupuesto.
         return ResponseEntity.created(uri).body(creado);
     }
 
@@ -54,21 +57,30 @@ public class PresupuestoController {
             @RequestParam(required = false) EstadoPresupuesto estado,
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable paginacion) {
 
-        return ResponseEntity.ok(new PagedModel<>(presupuestoService.listar(estado, paginacion)));
+        // Consulta los presupuestos aplicando estado y paginación.
+        var presupuestos = presupuestoService.listar(estado, paginacion);
+        // Devuelve el resultado paginado.
+        return ResponseEntity.ok(new PagedModel<>(presupuestos));
     }
 
     /** Presupuestos aprobados SIN montos, para que el Supervisor cree obras. */
     @PreAuthorize("hasRole('SUPERVISOR')")
     @GetMapping("/aprobados")
     public ResponseEntity<List<ResumenPresupuestoDTO>> aprobados() {
-        return ResponseEntity.ok(presupuestoService.aprobados());
+        // Obtiene los presupuestos aprobados disponibles para crear obras.
+        var presupuestos = presupuestoService.aprobados();
+        // Devuelve la lista sin exponer montos.
+        return ResponseEntity.ok(presupuestos);
     }
 
     /** Detalle con ítems y montos. Finanzas y Gerencia. */
     @PreAuthorize("hasAnyRole('FINANZAS','GERENCIA')")
     @GetMapping("/{id}")
     public ResponseEntity<DetallesPresupuestoDTO> detalle(@PathVariable Long id) {
-        return ResponseEntity.ok(presupuestoService.obtener(id));
+        // Busca el presupuesto solicitado por su identificador.
+        var presupuesto = presupuestoService.obtener(id);
+        // Devuelve el detalle con sus ítems y montos.
+        return ResponseEntity.ok(presupuesto);
     }
 
     /** Modificar ítems mientras esté PENDIENTE. Solo Finanzas. */
@@ -78,7 +90,10 @@ public class PresupuestoController {
             @PathVariable Long id,
             @RequestBody @Valid ModificarPresupuestoDTO datos) {
 
-        return ResponseEntity.ok(presupuestoService.actualizar(id, datos));
+        // Actualiza los ítems del presupuesto pendiente.
+        var presupuesto = presupuestoService.actualizar(id, datos);
+        // Devuelve el presupuesto actualizado.
+        return ResponseEntity.ok(presupuesto);
     }
 
     /** Aprobar un presupuesto PENDIENTE. Sobre el umbral, solo Gerencia. */
@@ -88,7 +103,10 @@ public class PresupuestoController {
             @PathVariable Long id,
             @AuthenticationPrincipal Usuario actor) {
 
-        return ResponseEntity.ok(presupuestoService.aprobar(id, actor));
+        // Solicita la aprobación del presupuesto con el usuario actual.
+        var presupuesto = presupuestoService.aprobar(id, actor);
+        // Devuelve el presupuesto con su nuevo estado.
+        return ResponseEntity.ok(presupuesto);
     }
 
     /** Rechazar un presupuesto PENDIENTE con motivo obligatorio. Sobre el umbral, solo Gerencia. */
@@ -99,14 +117,19 @@ public class PresupuestoController {
             @RequestBody @Valid RechazarPresupuestoDTO datos,
             @AuthenticationPrincipal Usuario actor) {
 
-        return ResponseEntity.ok(presupuestoService.rechazar(id, datos, actor));
+        // Solicita el rechazo del presupuesto con el motivo indicado.
+        var presupuesto = presupuestoService.rechazar(id, datos, actor);
+        // Devuelve el presupuesto con su nuevo estado.
+        return ResponseEntity.ok(presupuesto);
     }
 
     /** HU-27: descarga el PDF institucional de un presupuesto aprobado. Finanzas y Gerencia. */
     @PreAuthorize("hasAnyRole('FINANZAS','GERENCIA')")
     @GetMapping("/{id}/pdf")
     public ResponseEntity<byte[]> pdf(@PathVariable Long id) {
+        // Genera el PDF institucional del presupuesto.
         var contenido = presupuestoPdfService.generar(id);
+        // Configura la descarga con un nombre y tipo de contenido adecuados.
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment().filename("presupuesto-" + id + ".pdf").build().toString())

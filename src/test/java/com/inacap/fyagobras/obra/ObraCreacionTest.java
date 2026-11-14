@@ -1,9 +1,12 @@
-package com.inacap.fyagobras.domain.obra;
+package com.inacap.fyagobras.obra;
 
 import com.inacap.fyagobras.domain.audit.AuditoriaService;
 import com.inacap.fyagobras.domain.cliente.Cliente;
 import com.inacap.fyagobras.domain.costo.repository.CostoRealRepository;
 import com.inacap.fyagobras.domain.factura.repository.FacturaRepository;
+import com.inacap.fyagobras.domain.obra.EstadoObra;
+import com.inacap.fyagobras.domain.obra.Obra;
+import com.inacap.fyagobras.domain.obra.ObraService;
 import com.inacap.fyagobras.domain.obra.dto.RegistrarObraDTO;
 import com.inacap.fyagobras.domain.obra.repository.ObraRepository;
 import com.inacap.fyagobras.domain.presupuesto.EstadoPresupuesto;

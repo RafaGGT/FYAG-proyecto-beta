@@ -24,30 +24,40 @@ public class ClienteService {
 
     @Transactional
     public DetallesClienteDTO registrar(RegistrarClienteDTO datos) {
+        // Ejecuta todas las validaciones registradas para la creación.
         crearValidador.forEach(v -> v.validate(datos));
+        // Crea y persiste la entidad a partir de los datos recibidos.
         var guardado = clienteRepository.save(new Cliente(datos));
+        // Devuelve únicamente la información pública del cliente.
         return new DetallesClienteDTO(guardado);
     }
 
     public DetallesClienteDTO obtener(Long id) {
+        // Busca el cliente y transforma la entidad en un DTO de respuesta.
         return new DetallesClienteDTO(buscar(id));
     }
 
     public Page<DetallesClienteDTO> listar(String busqueda, Pageable paginacion) {
+        // Usa la consulta general cuando no se solicitó un filtro.
         var pagina = (busqueda == null || busqueda.isBlank())
                 ? clienteRepository.findAll(paginacion)
                 : clienteRepository.buscar(busqueda.trim(), paginacion);
+        // Convierte cada entidad de la página a su DTO correspondiente.
         return pagina.map(DetallesClienteDTO::new);
     }
 
     @Transactional
     public DetallesClienteDTO actualizar(Long id, ModificarClienteDTO datos) {
+        // Obtiene el cliente antes de modificarlo.
         var cliente = buscar(id);
+        // Aplica solo los campos permitidos por el dominio.
         cliente.actualizar(datos);   // JPA guarda solo al cerrar la transacción
+        // Devuelve el estado actualizado.
         return new DetallesClienteDTO(cliente);
     }
 
     private Cliente buscar(Long id) {
+        // Consulta el repositorio y comunica explícitamente si no existe.
         return clienteRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado"));
     }

@@ -27,7 +27,10 @@ public class CostoRealController {
             @RequestBody @Valid RegistrarCostosDTO datos,
             @AuthenticationPrincipal Usuario actor) {
 
-        return ResponseEntity.ok(costoService.registrar(obraId, datos, actor));
+        // Registra o reemplaza los costos de la obra.
+        var costos = costoService.registrar(obraId, datos, actor);
+        // Devuelve el resumen actualizado de costos.
+        return ResponseEntity.ok(costos);
     }
 
     @PreAuthorize("hasAnyRole('SUPERVISOR','TECNICO')")
@@ -36,14 +39,20 @@ public class CostoRealController {
             @PathVariable Long obraId,
             @AuthenticationPrincipal Usuario actor) {
 
-        return ResponseEntity.ok(costoService.obtener(obraId, actor));
+        // Consulta los costos de la obra verificando los permisos del usuario.
+        var costos = costoService.obtener(obraId, actor);
+        // Devuelve el detalle de costos.
+        return ResponseEntity.ok(costos);
     }
 
     /** Presupuesto aprobado vs costo real. Solo Gerencia y Finanzas. */
     @PreAuthorize("hasAnyRole('GERENCIA','FINANZAS')")
     @GetMapping("/rentabilidad")
     public ResponseEntity<RentabilidadDTO> rentabilidad(@PathVariable Long obraId) {
-        return ResponseEntity.ok(costoService.rentabilidad(obraId));
+        // Calcula la rentabilidad comparando presupuesto y costo real.
+        var rentabilidad = costoService.rentabilidad(obraId);
+        // Devuelve el resultado del cálculo.
+        return ResponseEntity.ok(rentabilidad);
     }
 
 

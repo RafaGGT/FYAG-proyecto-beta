@@ -15,16 +15,25 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-// Limita los intentos de login por IP para frenar ataques de fuerza bruta
+/**
+ * Limita por dirección IP las solicitudes de inicio de sesión para reducir
+ * ataques de fuerza bruta.
+ *
+ * <p>Aplica un bucket independiente a cada IP y permite como máximo cinco
+ * solicitudes por minuto en la ruta {@code /login}.</p>
+ */
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
 
-    // Un bucket por IP — se crea la primera vez que esa IP hace un request
+    /** Buckets de consumo asociados a las direcciones IP observadas. */
     private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
 
-    // Crea un bucket con el límite configurado
+    /**
+     * Crea el limitador para una nueva dirección IP.
+     *
+     * @return bucket con capacidad para cinco solicitudes por minuto
+     */
     private Bucket crearBucket() {
-        // Máximo 5 intentos cada 1 minuto por IP
         Bandwidth limite = Bandwidth.builder()
                 .capacity(5)
                 .refillIntervally(5, Duration.ofMinutes(1))
@@ -32,10 +41,26 @@ public class RateLimitFilter extends OncePerRequestFilter {
         return Bucket.builder().addLimit(limite).build();
     }
 
+    /**
+     * Obtiene el bucket existente o crea uno para la IP indicada.
+     *
+     * @param ip dirección IP del cliente
+     * @return bucket asociado a la IP
+     */
     private Bucket obtenerBucket(String ip) {
         return buckets.computeIfAbsent(ip, k -> crearBucket());
     }
 
+    /**
+     * Aplica el límite únicamente a {@code /login}; las demás solicitudes
+     * continúan por la cadena sin consumir tokens.
+     *
+     * @param request solicitud HTTP actual
+     * @param response respuesta HTTP que puede recibir el rechazo
+     * @param filterChain cadena de filtros restante
+     * @throws ServletException si falla un filtro posterior
+     * @throws IOException si ocurre un error de entrada o salida
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,

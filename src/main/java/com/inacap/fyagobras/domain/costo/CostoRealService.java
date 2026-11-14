@@ -27,23 +27,28 @@ public class CostoRealService {
     /** HU-04: registra (o reemplaza) los costos reales de la obra. Un registro por obra. */
     @Transactional
     public DetallesCostosDTO registrar(Long obraId, RegistrarCostosDTO datos, Usuario actor) {
+        // Busca la obra y valida que el técnico tenga acceso a ella.
         var obra = buscarObra(obraId, actor);
+        // Comprueba si ya existe un registro de costos para decidir entre crear o actualizar.
         var existente = costoRepository.findByObraId(obraId);
 
         Map<String, Object> anterior = null;
         CostoReal costo;
         String accion;
         if (existente.isPresent()) {
+            // Conserva el estado previo y reemplaza los valores del registro existente.
             costo = existente.get();
             anterior = mapa(costo);
             costo.actualizar(datos.materiales(), datos.horasTecnicas(), datos.valorHora());
             accion = "ACTUALIZAR_COSTOS";
         } else {
+            // Crea el primer registro de costos de la obra.
             costo = costoRepository.save(new CostoReal(obra,
                     datos.materiales(), datos.horasTecnicas(), datos.valorHora()));
             accion = "REGISTRAR_COSTOS";
         }
 
+        // Registra la operación realizada y sus valores finales.
         auditoriaService.registrar(actor, "costos_reales", costo.getId(), accion,
                 null, anterior, mapa(costo));
 
@@ -52,7 +57,9 @@ public class CostoRealService {
 
     @Transactional(readOnly = true)
     public DetallesCostosDTO obtener(Long obraId, Usuario actor) {
+        // Valida el acceso antes de consultar los costos.
         buscarObra(obraId, actor);
+        // Obtiene el único registro permitido por obra.
         var costo = costoRepository.findByObraId(obraId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("La obra aún no tiene costos registrados"));
         return new DetallesCostosDTO(costo);
@@ -61,6 +68,7 @@ public class CostoRealService {
     /** HU-04: diferencia entre el presupuesto aprobado y el costo real. */
     @Transactional(readOnly = true)
     public RentabilidadDTO rentabilidad(Long obraId) {
+        // Recupera la obra y su costo real para comparar ambos montos.
         var obra = obraRepository.findById(obraId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Obra no encontrada"));
         var costo = costoRepository.findByObraId(obraId)
@@ -69,14 +77,17 @@ public class CostoRealService {
         var presupuesto = obra.getPresupuesto().getMontoTotal();
         var total = costo.costoTotal();
 
+        // Calcula la diferencia entre lo presupuestado y el costo ejecutado.
         return new RentabilidadDTO(obraId, presupuesto, costo.getMateriales(),
                 costo.costoManoObra(), total, presupuesto.subtract(total));
     }
 
     /** El Técnico solo opera sobre las obras que tiene asignadas (HU-24). */
     private Obra buscarObra(Long obraId, Usuario actor) {
+        // Busca la obra solicitada.
         var obra = obraRepository.findById(obraId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Obra no encontrada"));
+        // Un técnico solo puede operar sobre sus propias obras.
         boolean esTecnico = actor.getRole() == Role.TECNICO;
         boolean esSuya = obra.getTecnico() != null && obra.getTecnico().getId().equals(actor.getId());
         if (esTecnico && !esSuya) {

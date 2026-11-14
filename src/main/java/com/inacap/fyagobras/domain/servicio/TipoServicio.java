@@ -26,6 +26,7 @@ public class TipoServicio {
     }
 
     public void renombrar(String nombre) {
+        // Actualiza el nombre manteniendo el mismo tipo histórico.
         this.nombre = nombre;
     }
 

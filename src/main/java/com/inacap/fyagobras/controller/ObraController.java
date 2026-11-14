@@ -36,8 +36,11 @@ public class ObraController {
             @AuthenticationPrincipal Usuario actor,
             UriComponentsBuilder uriComponentsBuilder) {
 
+        // Registra la obra usando los datos y el usuario autenticado.
         var creada = obraService.registrar(datos, actor);
+        // Construye la URI de la obra creada.
         var uri = uriComponentsBuilder.path("/obras/{id}").buildAndExpand(creada.id()).toUri();
+        // Responde con estado 201 y el detalle de la obra.
         return ResponseEntity.created(uri).body(creada);
     }
 
@@ -49,7 +52,10 @@ public class ObraController {
             @AuthenticationPrincipal Usuario actor,
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable paginacion) {
 
-        return ResponseEntity.ok(new PagedModel<>(obraService.listar(estado, actor, paginacion)));
+        // Consulta las obras según estado, usuario y paginación.
+        var obras = obraService.listar(estado, actor, paginacion);
+        // Devuelve el resultado paginado.
+        return ResponseEntity.ok(new PagedModel<>(obras));
     }
 
     /** Detalle de una obra. El Técnico solo si está asignada a él. */
@@ -59,7 +65,10 @@ public class ObraController {
             @PathVariable Long id,
             @AuthenticationPrincipal Usuario actor) {
 
-        return ResponseEntity.ok(obraService.obtener(id, actor));
+        // Obtiene la obra validando el acceso del usuario actual.
+        var obra = obraService.obtener(id, actor);
+        // Devuelve el detalle de la obra.
+        return ResponseEntity.ok(obra);
     }
 
     /** Cambiar el estado de la obra según la máquina de estados. Solo Supervisor. */
@@ -70,7 +79,10 @@ public class ObraController {
             @RequestBody @Valid CambiarEstadoObraDTO datos,
             @AuthenticationPrincipal Usuario actor) {
 
-        return ResponseEntity.ok(obraService.cambiarEstado(id, datos, actor));
+        // Solicita el cambio de estado de la obra.
+        var obra = obraService.cambiarEstado(id, datos, actor);
+        // Devuelve la obra con el nuevo estado.
+        return ResponseEntity.ok(obra);
     }
 
 
