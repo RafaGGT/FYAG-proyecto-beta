@@ -64,11 +64,11 @@ public class PresupuestoService {
         return pagina.map(ListaPresupuestoDTO::new);
     }
 
-    // Para el Supervisor: presupuestos aprobados, sin montos
+    // Para el Supervisor: presupuestos aprobados que aún no tienen obra, sin montos
     @Transactional(readOnly = true)
     public List<ResumenPresupuestoDTO> aprobados() {
-        // Consulta los presupuestos aprobados ordenados por fecha de aprobación.
-        return presupuestoRepository.findByEstadoOrderByFechaAprobacionDesc(EstadoPresupuesto.APROBADO)
+        // Consulta los presupuestos aprobados sin obra, ordenados por fecha de aprobación.
+        return presupuestoRepository.findDisponiblesParaObra(EstadoPresupuesto.APROBADO)
                 .stream().map(ResumenPresupuestoDTO::new).toList();
     }
 
@@ -117,6 +117,8 @@ public class PresupuestoService {
         return new DetallesPresupuestoDTO(presupuesto);
     }
 
+
+
     @Transactional
     public DetallesPresupuestoDTO rechazar(Long id, RechazarPresupuestoDTO datos, Usuario actor) {
         // Obtiene el presupuesto y valida el permiso para resolverlo.
@@ -155,4 +157,6 @@ public class PresupuestoService {
             throw new AccessDeniedException("Presupuesto sobre el umbral: solo Gerencia puede decidir.");
         }
     }
+
+
 }

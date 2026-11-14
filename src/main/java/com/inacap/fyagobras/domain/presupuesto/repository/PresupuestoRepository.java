@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -20,4 +21,13 @@ public interface PresupuestoRepository extends JpaRepository<Presupuesto, Long> 
     Long siguienteNumero();
 
     long countByEstado(EstadoPresupuesto estado);
+
+    // Presupuestos en el estado indicado que todavía no tienen una obra asociada
+    @Query("""
+            SELECT p FROM Presupuesto p
+            WHERE p.estado = :estado
+              AND NOT EXISTS (SELECT 1 FROM Obra o WHERE o.presupuesto = p)
+            ORDER BY p.fechaAprobacion DESC
+            """)
+    List<Presupuesto> findDisponiblesParaObra(@Param("estado") EstadoPresupuesto estado);
 }

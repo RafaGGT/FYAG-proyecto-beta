@@ -63,7 +63,7 @@ public class PresupuestoController {
         return ResponseEntity.ok(new PagedModel<>(presupuestos));
     }
 
-    /** Presupuestos aprobados SIN montos, para que el Supervisor cree obras. */
+    /** Presupuestos aprobados y sin obra, SIN montos, para que el Supervisor cree obras. */
     @PreAuthorize("hasRole('SUPERVISOR')")
     @GetMapping("/aprobados")
     public ResponseEntity<List<ResumenPresupuestoDTO>> aprobados() {
