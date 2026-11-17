@@ -6,6 +6,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.event.AuthenticationFailureBadCredentialsEvent;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.stereotype.Component;
+import org.springframework.security.authentication.event.AuthenticationFailureDisabledEvent;
+import org.springframework.security.authentication.event.AuthenticationFailureLockedEvent;
 
 /**
  * Escucha los eventos de autenticación de Spring Security para actualizar el
@@ -35,5 +37,17 @@ public class IntentosLoginListener {
     @EventListener
     public void alAutenticar(AuthenticationSuccessEvent evento) {
         usuarioService.registrarExitoLogin(evento.getAuthentication().getName());
+    }
+
+    // Intento de ingreso contra una cuenta bloqueada por intentos fallidos
+    @EventListener
+    public void alCuentaBloqueada(AuthenticationFailureLockedEvent evento) {
+        usuarioService.registrarIntentoRechazado(evento.getAuthentication().getName(), "LOGIN_CUENTA_BLOQUEADA");
+    }
+
+    // Intento de ingreso contra una cuenta desactivada
+    @EventListener
+    public void alCuentaDesactivada(AuthenticationFailureDisabledEvent evento) {
+        usuarioService.registrarIntentoRechazado(evento.getAuthentication().getName(), "LOGIN_CUENTA_DESACTIVADA");
     }
 }

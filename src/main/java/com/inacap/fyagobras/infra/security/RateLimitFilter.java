@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * ataques de fuerza bruta.
  *
  * <p>Aplica un bucket independiente a cada IP y permite como máximo cinco
- * solicitudes por minuto en la ruta {@code /login}.</p>
+ * solicitudes cada 15 minutos en la ruta {@code /login}.</p>
  */
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -31,12 +31,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
     /**
      * Crea el limitador para una nueva dirección IP.
      *
-     * @return bucket con capacidad para cinco solicitudes por minuto
+     * @return bucket con capacidad para cinco solicitudes cada 15 minutos
      */
     private Bucket crearBucket() {
         Bandwidth limite = Bandwidth.builder()
                 .capacity(5)
-                .refillIntervally(5, Duration.ofMinutes(1))
+                .refillIntervally(5, Duration.ofMinutes(15))
                 .build();
         return Bucket.builder().addLimit(limite).build();
     }
@@ -89,7 +89,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.setContentType("application/problem+json");
             response.setCharacterEncoding("UTF-8");
-            response.getWriter().write("{\"status\":429,\"detail\":\"Demasiados intentos. Espera 1 minuto.\"}");
+            response.getWriter().write("{\"status\":429,\"detail\":\"Demasiados intentos. Espera 15 minutos.\"}");
         }
     }
 }

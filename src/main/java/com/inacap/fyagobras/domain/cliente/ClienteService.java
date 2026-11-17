@@ -11,6 +11,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.inacap.fyagobras.domain.audit.AuditoriaService;
+import com.inacap.fyagobras.domain.user.Usuario;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import java.util.List;
 
@@ -21,6 +25,8 @@ public class ClienteService {
     private ClienteRepository clienteRepository;
     @Autowired
     private List<ValidarCrearCliente> crearValidador;
+    @Autowired
+    private AuditoriaService auditoriaService;
 
     @Transactional
     public DetallesClienteDTO registrar(RegistrarClienteDTO datos) {
@@ -60,5 +66,41 @@ public class ClienteService {
         // Consulta el repositorio y comunica explícitamente si no existe.
         return clienteRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado"));
+    }
+
+    @Transactional
+    public DetallesClienteDTO registrar(RegistrarClienteDTO datos, Usuario actor) {
+        crearValidador.forEach(v -> v.validate(datos));
+        var guardado = clienteRepository.save(new Cliente(datos));
+        // Auditoría: alta de cliente con los datos guardados
+        auditoriaService.registrar(actor, "clientes", guardado.getId(), "CREAR_CLIENTE", null, null,
+                datosCliente(guardado));
+        return new DetallesClienteDTO(guardado);
+    }
+
+    @Transactional
+    public DetallesClienteDTO actualizar(Long id, ModificarClienteDTO datos, Usuario actor) {
+        var cliente = buscar(id);
+        // Foto de los datos ANTES de modificar
+        var anterior = datosCliente(cliente);
+        cliente.actualizar(datos);
+        var nuevo = datosCliente(cliente);
+        // Si no cambió ningún dato no se registra auditoría
+        if (!anterior.equals(nuevo)) {
+            auditoriaService.registrar(actor, "clientes", cliente.getId(), "ACTUALIZAR_CLIENTE", null,
+                    anterior, nuevo);
+        }
+        return new DetallesClienteDTO(cliente);
+    }
+
+    // LinkedHashMap en vez de Map.of porque dirección, correo y teléfono pueden ser null
+    private Map<String, Object> datosCliente(Cliente c) {
+        var datos = new LinkedHashMap<String, Object>();
+        datos.put("rut", c.getRut());
+        datos.put("razon_social", c.getRazonSocial());
+        datos.put("direccion", c.getDireccion());
+        datos.put("email", c.getEmail());
+        datos.put("telefono", c.getTelefono());
+        return datos;
     }
 }

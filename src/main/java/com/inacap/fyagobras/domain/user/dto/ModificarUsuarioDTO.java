@@ -6,17 +6,17 @@ import jakarta.validation.constraints.Size;
 
 public record ModificarUsuarioDTO(
 
-        @Size(max = 100, message = "El nombre no debe exceder 100 caracteres")
+        @Size(max = 40, message = "El nombre no debe exceder 40 caracteres")
         String nombre,
 
-        @Size(max = 100, message = "El apellido no debe exceder 100 caracteres")
+        @Size(max = 40, message = "El apellido no debe exceder 40 caracteres")
         String apellido,
 
         @Email(message = "El correo electrónico no es válido")
-        @Size(max = 150, message = "El correo electrónico no debe exceder 150 caracteres")
+        @Size(max = 40, message = "El correo electrónico no debe exceder 40 caracteres")
         String email,
 
-        @Size(max = 20, message = "El teléfono no debe exceder 20 caracteres")
+        @Size(max = 12, message = "El teléfono no debe exceder 12 caracteres")
         String telefono
 ) {
 }

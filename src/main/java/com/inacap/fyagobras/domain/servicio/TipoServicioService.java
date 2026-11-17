@@ -7,7 +7,9 @@ import com.inacap.fyagobras.infra.exception.RecursoNoEncontradoException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.inacap.fyagobras.domain.audit.AuditoriaService;
+import com.inacap.fyagobras.domain.user.Usuario;
+import java.util.Map;
 import java.util.List;
 
 @Service
@@ -15,6 +17,9 @@ public class TipoServicioService {
 
     @Autowired
     private TipoServicioRepository repository;
+
+    @Autowired
+    private AuditoriaService auditoriaService;
 
     /** Lista para el desplegable: solo vigentes. Con incluirInactivos, el panel del Supervisor ve todos. */
     @Transactional(readOnly = true)
@@ -28,39 +33,47 @@ public class TipoServicioService {
     }
 
     @Transactional
-    public DetallesTipoServicioDTO registrar(RegistrarTipoServicioDTO datos) {
-        // Normaliza el nombre antes de validar y guardar.
+    public DetallesTipoServicioDTO registrar(RegistrarTipoServicioDTO datos, Usuario actor) {
         var nombre = datos.nombre().trim();
-        // Impide registrar dos tipos con el mismo nombre.
         if (repository.existsByNombreIgnoreCase(nombre)) {
             throw new ConflictoNegocioException("Ya existe un tipo de servicio con ese nombre.");
         }
-        // Persiste el nuevo tipo y devuelve su representación de salida.
-        return new DetallesTipoServicioDTO(repository.save(new TipoServicio(nombre)));
+        var guardado = repository.save(new TipoServicio(nombre));
+        // Auditoría: alta de un tipo de servicio (HU-08)
+        auditoriaService.registrar(actor, "tipos_servicio", guardado.getId(), "CREAR_TIPO_SERVICIO", null, null,
+                Map.of("nombre", guardado.getNombre(), "activo", guardado.isActivo()));
+        return new DetallesTipoServicioDTO(guardado);
     }
 
     @Transactional
-    public DetallesTipoServicioDTO modificar(Long id, ModificarTipoServicioDTO datos) {
-        // Recupera el tipo que se desea modificar.
+    public DetallesTipoServicioDTO modificar(Long id, ModificarTipoServicioDTO datos, Usuario actor) {
         var tipo = buscar(id);
         var nombre = datos.nombre().trim();
-        // Valida la unicidad ignorando el registro actualmente editado.
         if (repository.existsByNombreIgnoreCaseAndIdNot(nombre, id)) {
             throw new ConflictoNegocioException("Ya existe un tipo de servicio con ese nombre.");
         }
-        // Cambia el nombre dentro de la entidad administrada por JPA.
+        // Nombre anterior antes de renombrar
+        var anterior = tipo.getNombre();
         tipo.renombrar(nombre);
+        if (!anterior.equals(nombre)) {
+            auditoriaService.registrar(actor, "tipos_servicio", tipo.getId(), "MODIFICAR_TIPO_SERVICIO", null,
+                    Map.of("nombre", anterior), Map.of("nombre", nombre));
+        }
         return new DetallesTipoServicioDTO(tipo);
     }
 
     @Transactional
-    public DetallesTipoServicioDTO cambiarEstado(Long id, CambiarEstadoTipoServicioDTO datos) {
-        // Obtiene el tipo y aplica el nuevo estado activo/inactivo.
+    public DetallesTipoServicioDTO cambiarEstado(Long id, CambiarEstadoTipoServicioDTO datos, Usuario actor) {
         var tipo = buscar(id);
+        var anterior = tipo.isActivo();
         tipo.cambiarEstado(datos.activo());
+        // Auditoría: se desactiva, nunca se elimina
+        if (anterior != datos.activo()) {
+            auditoriaService.registrar(actor, "tipos_servicio", tipo.getId(), "CAMBIAR_ESTADO_TIPO_SERVICIO", null,
+                    Map.of("activo", anterior), Map.of("activo", datos.activo()));
+        }
         return new DetallesTipoServicioDTO(tipo);
     }
-
     private TipoServicio buscar(Long id) {
         // Centraliza la búsqueda y el error para los métodos del servicio.
         return repository.findById(id)

@@ -1,11 +1,11 @@
 CREATE TABLE usuarios (
                           id                    BIGSERIAL PRIMARY KEY,
-                          nombre                VARCHAR(100) NOT NULL,
-                          apellido              VARCHAR(100) NOT NULL,
-                          rut                   VARCHAR(20)  NOT NULL UNIQUE,
-                          email                 VARCHAR(150) NOT NULL UNIQUE,
+                          nombre                VARCHAR(40) NOT NULL,
+                          apellido              VARCHAR(40) NOT NULL,
+                          rut                   VARCHAR(12)  NOT NULL UNIQUE,
+                          email                 VARCHAR(40) NOT NULL UNIQUE,
                           telefono              VARCHAR(20)  NULL,
-                          username              VARCHAR(20)  NOT NULL UNIQUE,
+                          username              VARCHAR(40)  NOT NULL UNIQUE,
                           password              VARCHAR(255) NOT NULL,
                           role                  VARCHAR(20)  NOT NULL
                               CHECK (role IN ('ADMIN','GERENCIA','FINANZAS','SUPERVISOR','TECNICO')),
@@ -25,5 +25,5 @@ VALUES (
            'admin',
            '$2b$10$.hvl.5v3hezce.XlhqXj5eYruT9X0aGIueRA09MPn8TyHTBeiBbE6',
            'ADMIN',
-           TRUE
+           FALSE
        );

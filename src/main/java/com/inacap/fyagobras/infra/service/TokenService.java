@@ -42,7 +42,7 @@ public class TokenService {
                     .withIssuer(ISSUER) //
                     .withSubject(usuario.getUsername())
                     .withClaim("type", "access") // marca este token como de acceso
-                    .withClaim("role", usuario.getRole().name()) // para que otros microservicios (inventory-service) sepan el rol sin llamarte
+                    .withClaim("role", usuario.getRole().name()) // para llamar el rol sin llamarte
                     .withExpiresAt(fechaExpiracionAcceso())
                     .sign(algoritmo);
         } catch (JWTCreationException exception){

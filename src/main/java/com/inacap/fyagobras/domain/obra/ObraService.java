@@ -22,7 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.inacap.fyagobras.domain.obra.dto.AsignarTecnicoDTO;
 
 import java.util.Map;
 
@@ -58,7 +58,7 @@ public class ObraService {
         if (!tipo.isActivo()) {
             throw new ConflictoNegocioException("El tipo de servicio ya no está vigente.");
         }
-
+        // verifica que exista el tecnico
         var tecnico = usuarioRepository.findById(datos.tecnicoId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Técnico no encontrado"));
         if (tecnico.getRole() != Role.TECNICO || !tecnico.isEnabled()) {
@@ -159,6 +159,43 @@ public class ObraService {
                 datos.motivo(),
                 Map.of("estado", origen.name()),
                 Map.of("estado", destino.name()));
+
+        return new DetallesObraDTO(obra);
+    }
+
+    /** HU-07: asigna o reemplaza al técnico responsable de una obra. Solo técnicos activos. */
+    @Transactional
+    public DetallesObraDTO asignarTecnico(Long id, AsignarTecnicoDTO datos, Usuario actor) {
+        var obra = obraRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Obra no encontrada"));
+
+        // Una obra cerrada ya no admite cambiar al responsable
+        if (obra.getEstado() == EstadoObra.FINALIZADA || obra.getEstado() == EstadoObra.CANCELADA) {
+            throw new ConflictoNegocioException("No se puede cambiar el técnico de una obra " + obra.getEstado() + ".");
+        }
+
+        // Mismo criterio que al crear la obra: debe ser un técnico activo
+        var nuevo = usuarioRepository.findById(datos.tecnicoId())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Técnico no encontrado"));
+        if (nuevo.getRole() != Role.TECNICO || !nuevo.isEnabled()) {
+            throw new ConflictoNegocioException("Debe seleccionar un técnico activo.");
+        }
+
+        // Si es el mismo técnico no hay nada que cambiar ni auditar
+        if (obra.getTecnico() != null && obra.getTecnico().getId().equals(nuevo.getId())) {
+            return new DetallesObraDTO(obra);
+        }
+
+        // Map.of no admite null: si la obra no tenía técnico, el valor anterior va vacío
+        Map<String, Object> anterior = obra.getTecnico() == null
+                ? null
+                : Map.of("tecnico_id", obra.getTecnico().getId());
+
+        obra.asignarTecnico(nuevo);
+
+        // Auditoría: quién cambió al responsable, de quién a quién
+        auditoriaService.registrar(actor, "obras", obra.getId(), "ASIGNAR_TECNICO", null,
+                anterior, Map.of("tecnico_id", nuevo.getId()));
 
         return new DetallesObraDTO(obra);
     }

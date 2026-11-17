@@ -14,7 +14,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
-
 import java.util.List;
 
 // Define la clase como un controlador REST y mapea la ruta base "/usuarios"
@@ -29,6 +28,7 @@ public class UsuarioController {
     /**
      * Registrar un nuevo usuario.
      * @param datos los datos del usuario a registrar
+     * @param actor el administrador autenticado que crea la cuenta (para la auditoría)
      * @param uriComponentsBuilder para construir la URI del recurso creado
      * @return la respuesta con el estado 201 Created
      */
@@ -38,10 +38,11 @@ public class UsuarioController {
     @PostMapping
     public ResponseEntity<DetallesUsuarioDTO> registrar(
             @RequestBody @Valid RegistrarUsuarioDTO datos,
+            @AuthenticationPrincipal Usuario actor,
             UriComponentsBuilder uriComponentsBuilder) {
 
-        // Llama al servicio para registrar el usuario y obtiene sus detalles
-        var creado = usuarioService.registrar(datos);
+        // Llama al servicio para registrar el usuario (con el actor para auditar) y obtiene sus detalles
+        var creado = usuarioService.registrar(datos, actor);
         // Construye la URI absoluta para acceder al recurso creado (/usuarios/{username})
         var uri = uriComponentsBuilder.path("/usuarios/{username}")
                 .buildAndExpand(creado.username())
@@ -104,8 +105,8 @@ public class UsuarioController {
      * Listar técnicos.
      * @return
      */
-    // Restringe el acceso a roles ADMIN, SUPERVISOR o GERENCIA
-    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR','GERENCIA')")
+    // Restringe el acceso a roles ADMIN, SUPERVISOR, GERENCIA o FINANZAS (Finanzas lo usa para filtrar reportes)
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR','GERENCIA','FINANZAS')")
     // Define un endpoint GET en "/usuarios/tecnicos" para obtener una lista simplificada de técnicos
     @GetMapping("/tecnicos")
     public ResponseEntity<List<TecnicoDTO>> tecnicos() {
@@ -137,6 +138,7 @@ public class UsuarioController {
      * Administrar la cuenta de un usuario (cambiar rol).
      * @param username
      * @param datos
+     * @param actor el administrador autenticado que hace el cambio (para la auditoría)
      * @return
      */
     // Restringe el acceso exclusivo a administradores
@@ -145,10 +147,11 @@ public class UsuarioController {
     @PatchMapping("/{username}/cuenta")
     public ResponseEntity<DetallesUsuarioDTO> administrarCuenta(
             @PathVariable String username,
-            @RequestBody @Valid ModificarRolDTO datos) {
+            @RequestBody @Valid ModificarRolDTO datos,
+            @AuthenticationPrincipal Usuario actor) {
 
         // Ejecuta la actualización en el servicio y recibe el usuario modificado
-        var usuario = usuarioService.administrarCuenta(username, datos);
+        var usuario = usuarioService.administrarCuenta(username, datos, actor);
         // Retorna los detalles actualizados del usuario con estado 200 OK
         return ResponseEntity.ok(new DetallesUsuarioDTO(usuario));
     }
@@ -177,6 +180,7 @@ public class UsuarioController {
      * Cambiar el estado activo de un usuario.
      * @param username
      * @param datos
+     * @param actor el administrador autenticado que hace el cambio (para la auditoría)
      * @return
      */
     // Restringe el acceso solo a administradores
@@ -185,10 +189,11 @@ public class UsuarioController {
     @PatchMapping("/{username}/estado")
     public ResponseEntity<DetallesUsuarioDTO> cambiarEstado(
             @PathVariable String username,
-            @RequestBody @Valid UsuarioActivoDTO datos) {
+            @RequestBody @Valid UsuarioActivoDTO datos,
+            @AuthenticationPrincipal Usuario actor) {
 
         // Modifica el estado activo del usuario mediante el servicio
-        var usuario = usuarioService.cambiarEstado(username, datos);
+        var usuario = usuarioService.cambiarEstado(username, datos, actor);
         // Retorna el usuario actualizado con estado 200 OK
         return ResponseEntity.ok(new DetallesUsuarioDTO(usuario));
     }
@@ -196,15 +201,18 @@ public class UsuarioController {
     /**
      * Resetear la contraseña de un usuario y generar credenciales temporales.
      * @param username
+     * @param actor el administrador autenticado que hace el reset (para la auditoría)
      * @return
      */
     // Restringe el acceso solo a administradores
     @PreAuthorize("hasRole('ADMIN')")
     // Define un endpoint POST para restablecer la contraseña y generar claves temporales
     @PostMapping("/{username}/reset-password")
-    public ResponseEntity<CredencialesTemporalesDTO> resetearPassword(@PathVariable String username) {
+    public ResponseEntity<CredencialesTemporalesDTO> resetearPassword(
+            @PathVariable String username,
+            @AuthenticationPrincipal Usuario actor) {
         // Solicita al servicio el restablecimiento de la contraseña.
-        var credenciales = usuarioService.resetearPassword(username);
+        var credenciales = usuarioService.resetearPassword(username, actor);
         // Retorna las credenciales temporales generadas por el servicio con un estado 200 OK
         return ResponseEntity.ok(credenciales);
     }
@@ -212,15 +220,18 @@ public class UsuarioController {
     /**
      * Desbloquear un usuario bloqueado.
      * @param username
+     * @param actor el administrador autenticado que levanta el bloqueo (para la auditoría)
      * @return
      */
     // Restringe el acceso solo a administradores
     @PreAuthorize("hasRole('ADMIN')")
     // Define un endpoint PATCH para desbloquear una cuenta de usuario bloqueada
     @PatchMapping("/{username}/desbloqueo")
-    public ResponseEntity<DetallesUsuarioDTO> desbloquear(@PathVariable String username) {
+    public ResponseEntity<DetallesUsuarioDTO> desbloquear(
+            @PathVariable String username,
+            @AuthenticationPrincipal Usuario actor) {
         // Ejecuta el desbloqueo a través del servicio
-        var usuario = usuarioService.desbloquear(username);
+        var usuario = usuarioService.desbloquear(username, actor);
         // Retorna los detalles del usuario desbloqueado con estado 200 OK
         return ResponseEntity.ok(new DetallesUsuarioDTO(usuario));
     }

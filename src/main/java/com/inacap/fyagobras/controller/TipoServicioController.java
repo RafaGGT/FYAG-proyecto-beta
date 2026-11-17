@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
+import com.inacap.fyagobras.domain.user.Usuario;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import java.util.List;
 
@@ -35,10 +37,10 @@ public class TipoServicioController {
     @PostMapping
     public ResponseEntity<DetallesTipoServicioDTO> registrar(
             @RequestBody @Valid RegistrarTipoServicioDTO datos,
-            UriComponentsBuilder uriComponentsBuilder) {
+            @AuthenticationPrincipal Usuario actor, UriComponentsBuilder uriComponentsBuilder) {
 
         // Registra el nuevo tipo de servicio.
-        var creado = tipoServicioService.registrar(datos);
+        var creado = tipoServicioService.registrar(datos, actor);
         // Construye la URI del tipo de servicio creado.
         var uri = uriComponentsBuilder.path("/tipos-servicio/{id}").buildAndExpand(creado.id()).toUri();
         // Responde con estado 201 y el recurso creado.
@@ -50,10 +52,10 @@ public class TipoServicioController {
     @PutMapping("/{id}")
     public ResponseEntity<DetallesTipoServicioDTO> modificar(
             @PathVariable Long id,
-            @RequestBody @Valid ModificarTipoServicioDTO datos) {
+            @RequestBody @Valid ModificarTipoServicioDTO datos, @AuthenticationPrincipal Usuario actor) {
 
         // Actualiza el nombre del tipo de servicio.
-        var tipo = tipoServicioService.modificar(id, datos);
+        var tipo = tipoServicioService.modificar(id, datos, actor);
         // Devuelve el recurso actualizado.
         return ResponseEntity.ok(tipo);
     }
@@ -63,10 +65,10 @@ public class TipoServicioController {
     @PatchMapping("/{id}/estado")
     public ResponseEntity<DetallesTipoServicioDTO> cambiarEstado(
             @PathVariable Long id,
-            @RequestBody @Valid CambiarEstadoTipoServicioDTO datos) {
+            @RequestBody @Valid CambiarEstadoTipoServicioDTO datos, @AuthenticationPrincipal Usuario actor) {
 
         // Cambia la vigencia del tipo de servicio sin eliminarlo.
-        var tipo = tipoServicioService.cambiarEstado(id, datos);
+        var tipo = tipoServicioService.cambiarEstado(id, datos, actor);
         // Devuelve el recurso con su nuevo estado.
         return ResponseEntity.ok(tipo);
     }

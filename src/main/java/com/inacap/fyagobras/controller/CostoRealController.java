@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+
 @RestController
 @RequestMapping("/obras/{obraId}")
 public class CostoRealController {
@@ -39,20 +40,20 @@ public class CostoRealController {
             @PathVariable Long obraId,
             @AuthenticationPrincipal Usuario actor) {
 
-        // Consulta los costos de la obra verificando los permisos del usuario.
-        var costos = costoService.obtener(obraId, actor);
-        // Devuelve el detalle de costos.
-        return ResponseEntity.ok(costos);
+        // Si la obra aún no tiene costos, responde 204 (sin contenido) en vez de un error 404.
+        return costoService.obtener(obraId, actor)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     /** Presupuesto aprobado vs costo real. Solo Gerencia y Finanzas. */
     @PreAuthorize("hasAnyRole('GERENCIA','FINANZAS')")
     @GetMapping("/rentabilidad")
     public ResponseEntity<RentabilidadDTO> rentabilidad(@PathVariable Long obraId) {
-        // Calcula la rentabilidad comparando presupuesto y costo real.
-        var rentabilidad = costoService.rentabilidad(obraId);
-        // Devuelve el resultado del cálculo.
-        return ResponseEntity.ok(rentabilidad);
+        // Sin costos registrados responde 204 en vez de un error 404.
+        return costoService.rentabilidad(obraId)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
     }
 
 

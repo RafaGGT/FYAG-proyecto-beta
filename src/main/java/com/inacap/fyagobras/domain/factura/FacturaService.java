@@ -1,9 +1,11 @@
 package com.inacap.fyagobras.domain.factura;
+
 import com.inacap.fyagobras.domain.audit.AuditoriaService;
 import com.inacap.fyagobras.domain.factura.dto.*;
 import com.inacap.fyagobras.domain.factura.repository.FacturaRepository;
 import com.inacap.fyagobras.domain.factura.validation.create.ValidarEmitirFactura;
 import com.inacap.fyagobras.domain.factura.validation.pago.ValidarRegistrarPago;
+import com.inacap.fyagobras.domain.obra.EstadoObra;
 import com.inacap.fyagobras.domain.obra.repository.ObraRepository;
 import com.inacap.fyagobras.domain.user.Usuario;
 import com.inacap.fyagobras.infra.exception.ConflictoNegocioException;
@@ -28,7 +30,10 @@ public class FacturaService {
     @Autowired private List<ValidarEmitirFactura> emitirValidador;
     @Autowired private List<ValidarRegistrarPago> pagoValidador;
 
-    /** HU-13: solo se factura una obra FINALIZADA; el estado de pago inicial es PENDIENTE. */
+    /**
+     * HU-13: solo se factura una obra FINALIZADA y sin superar su saldo por facturar.
+     * El número de factura se genera automáticamente; el estado de pago inicial es PENDIENTE.
+     */
     @Transactional
     public DetallesFacturaDTO emitir(EmitirFacturaDTO datos, Usuario actor) {
         // Ejecuta las reglas de negocio para emitir la factura.
@@ -38,9 +43,12 @@ public class FacturaService {
         var obra = obraRepository.findById(datos.obraId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Obra no encontrada"));
 
+        // Genera el correlativo automático (F-0001, F-0002, ...).
+        var numero = String.format("F-%04d", facturaRepository.siguienteNumero());
+
         // Crea la factura con estado de pago pendiente y la persiste.
         var factura = facturaRepository.save(new Factura(
-                datos.numeroFactura().trim(), obra,
+                numero, obra,
                 datos.fechaEmision(), datos.fechaVencimiento(), datos.monto()));
 
         // Registra la emisión para mantener trazabilidad de la operación.
@@ -52,6 +60,22 @@ public class FacturaService {
                         "estado_pago", factura.getEstadoPago().name()));
 
         return new DetallesFacturaDTO(factura);
+    }
+
+    /** Obras FINALIZADAS que aún tienen saldo por facturar (presupuesto menos lo ya facturado). */
+    @Transactional(readOnly = true)
+    public List<ObraFacturableDTO> obrasFacturables() {
+        return obraRepository.findByEstado(EstadoObra.FINALIZADA, Pageable.unpaged()).stream()
+                .map(o -> {
+                    var presupuestado = o.getPresupuesto().getMontoTotal();
+                    var facturado = facturaRepository.totalFacturadoObra(o.getId());
+                    return new ObraFacturableDTO(
+                            o.getId(), o.getNombre(),
+                            o.getPresupuesto().getCliente().getRazonSocial(),
+                            presupuestado, facturado, presupuestado.subtract(facturado));
+                })
+                .filter(d -> d.saldoPorFacturar().signum() > 0)
+                .toList();
     }
 
     @Transactional(readOnly = true)

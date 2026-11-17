@@ -17,7 +17,7 @@ public record RegistrarCostosDTO(
         @Digits(integer = 6, fraction = 2, message = "Formato de horas inválido")
         BigDecimal horasTecnicas,
 
-        @NotNull(message = "El valor hora es obligatorio")
+        // Opcional: lo define el Supervisor. El Técnico no lo envía (HU-04 / HU-24: sin ver montos)
         @PositiveOrZero(message = "El valor hora no puede ser negativo")
         @Digits(integer = 12, fraction = 2, message = "Formato de monto inválido")
         BigDecimal valorHora
