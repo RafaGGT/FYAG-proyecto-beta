@@ -8,7 +8,7 @@ import com.inacap.fyagobras.domain.factura.FacturaService;
 import com.inacap.fyagobras.domain.factura.dto.EmitirFacturaDTO;
 import com.inacap.fyagobras.domain.factura.dto.RegistrarPagoDTO;
 import com.inacap.fyagobras.domain.factura.repository.FacturaRepository;
-import com.inacap.fyagobras.domain.factura.validation.create.NumeroFacturaUnico;
+import com.inacap.fyagobras.domain.factura.validation.create.MontoNoExcedeSaldo;
 import com.inacap.fyagobras.domain.factura.validation.create.ObraFinalizada;
 import com.inacap.fyagobras.domain.factura.validation.pago.FacturaPendiente;
 import com.inacap.fyagobras.domain.factura.validation.pago.FechaPagoValida;
@@ -50,7 +50,7 @@ import static org.mockito.Mockito.when;
  * Trazabilidad: HU-13, HU-14, RF-04. Tipo: funcional. Herramienta: JUnit 5 (automatizada).
  *
  * FacturaService recibe sus validadores como listas inyectadas por Spring. Aquí se arman
- * con los validadores reales (ObraFinalizada, NumeroFacturaUnico, FacturaPendiente, FechaPagoValida)
+ * con los validadores reales (ObraFinalizada, MontoNoExcedeSaldo, FacturaPendiente, FechaPagoValida)
  * y repositorios simulados, de modo que se prueban las reglas de negocio de verdad.
  */
 @ExtendWith(MockitoExtension.class)
@@ -72,16 +72,18 @@ class FacturaCobroTest {
 
     @BeforeEach
     void preparar() {
-        var numeroUnico = new NumeroFacturaUnico();
-        ReflectionTestUtils.setField(numeroUnico, "repository", facturaRepository);
         var obraFinalizada = new ObraFinalizada();
         ReflectionTestUtils.setField(obraFinalizada, "repository", obraRepository);
+
+        var montoSaldo = new MontoNoExcedeSaldo();
+        ReflectionTestUtils.setField(montoSaldo, "obraRepository", obraRepository);
+        ReflectionTestUtils.setField(montoSaldo, "facturaRepository", facturaRepository);
 
         service = new FacturaService();
         ReflectionTestUtils.setField(service, "facturaRepository", facturaRepository);
         ReflectionTestUtils.setField(service, "obraRepository", obraRepository);
         ReflectionTestUtils.setField(service, "auditoriaService", auditoriaService);
-        ReflectionTestUtils.setField(service, "emitirValidador", List.of(numeroUnico, obraFinalizada));
+        ReflectionTestUtils.setField(service, "emitirValidador", List.of(obraFinalizada, montoSaldo));
         ReflectionTestUtils.setField(service, "pagoValidador",
                 List.of(new FacturaPendiente(), new FechaPagoValida()));
 
@@ -113,15 +115,17 @@ class FacturaCobroTest {
     }
 
     private static EmitirFacturaDTO datosFactura() {
-        return new EmitirFacturaDTO("F-0001", OBRA_ID, EMISION, VENCIMIENTO, new BigDecimal("200000"));
+        return new EmitirFacturaDTO(OBRA_ID, EMISION, VENCIMIENTO, new BigDecimal("200000"));
     }
 
     // ---------- HU-13: emitir factura ----------
 
     @Test
-    @DisplayName("Con la obra FINALIZADA se emite la factura con estado de pago PENDIENTE")
+    @DisplayName("Con la obra FINALIZADA se emite la factura con número automático y estado PENDIENTE")
     void obraFinalizadaSeFactura() {
         when(obraRepository.findById(OBRA_ID)).thenReturn(Optional.of(obra(EstadoObra.FINALIZADA)));
+        when(facturaRepository.totalFacturadoObra(OBRA_ID)).thenReturn(BigDecimal.ZERO);
+        when(facturaRepository.siguienteNumero()).thenReturn(1L);
         when(facturaRepository.save(any(Factura.class))).thenAnswer(inv -> {
             Factura f = inv.getArgument(0);
             ReflectionTestUtils.setField(f, "id", FACTURA_ID);
@@ -162,6 +166,20 @@ class FacturaCobroTest {
                 .hasMessage("Solo se puede facturar una obra en estado FINALIZADA.");
 
         verify(facturaRepository, never()).save(any(Factura.class));
+    }
+
+    @Test
+    @DisplayName("No se puede facturar más que el saldo por facturar de la obra")
+    void noSePuedeFacturarMasQueElSaldo() {
+        when(obraRepository.findById(OBRA_ID)).thenReturn(Optional.of(obra(EstadoObra.FINALIZADA)));
+        when(facturaRepository.totalFacturadoObra(OBRA_ID)).thenReturn(new BigDecimal("150000"));
+
+        assertThatThrownBy(() -> service.emitir(datosFactura(), actor))
+                .isInstanceOf(ConflictoNegocioException.class)
+                .hasMessageContaining("supera el saldo");
+
+        verify(facturaRepository, never()).save(any(Factura.class));
+        verify(auditoriaService, never()).registrar(any(), any(), any(), any(), any(), any(), any());
     }
 
     // ---------- HU-14: registrar pago ----------

@@ -104,4 +104,11 @@ public class FacturaController {
         return ResponseEntity.ok(clientes);
     }
 
+    /** Obras finalizadas con saldo por facturar. Solo Finanzas. */
+    @PreAuthorize("hasRole('FINANZAS')")
+    @GetMapping("/obras-facturables")
+    public ResponseEntity<List<ObraFacturableDTO>> obrasFacturables() {
+        return ResponseEntity.ok(facturaService.obrasFacturables());
+    }
+
 }

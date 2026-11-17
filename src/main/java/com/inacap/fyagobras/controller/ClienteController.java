@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
+import com.inacap.fyagobras.domain.user.Usuario;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 // Define la clase como un controlador REST y mapea la ruta base "/clientes"
 @RestController
@@ -30,10 +32,9 @@ public class ClienteController {
     @PostMapping
     public ResponseEntity<DetallesClienteDTO> registrar(
             @RequestBody @Valid RegistrarClienteDTO datos,
+            @AuthenticationPrincipal Usuario actor,
             UriComponentsBuilder uriComponentsBuilder) {
-
-        // Llama al servicio para registrar el cliente y obtiene sus detalles
-        var creado = clienteService.registrar(datos);
+        var creado = clienteService.registrar(datos, actor);
         // Construye la URI del recurso recién creado (/clientes/{id})
         var uri = uriComponentsBuilder.path("/clientes/{id}").buildAndExpand(creado.id()).toUri();
         // Retorna una respuesta 201 Created con la URI y el cuerpo con los detalles del cliente
@@ -74,10 +75,9 @@ public class ClienteController {
     @PutMapping("/{id}")
     public ResponseEntity<DetallesClienteDTO> actualizar(
             @PathVariable Long id,
-            @RequestBody @Valid ModificarClienteDTO datos) {
-
-        // Actualiza los datos de contacto del cliente.
-        var cliente = clienteService.actualizar(id, datos);
+            @RequestBody @Valid ModificarClienteDTO datos,
+            @AuthenticationPrincipal Usuario actor) {
+        var cliente = clienteService.actualizar(id, datos, actor);
         // Actualiza el cliente a través del servicio y retorna el resultado con estado 200 OK
         return ResponseEntity.ok(cliente);
     }

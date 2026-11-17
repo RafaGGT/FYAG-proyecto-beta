@@ -18,6 +18,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import com.inacap.fyagobras.domain.obra.dto.CambiarEstadoObraDTO;
+import com.inacap.fyagobras.domain.obra.dto.AsignarTecnicoDTO;
 
 @RestController
 @RequestMapping("/obras")
@@ -85,5 +86,17 @@ public class ObraController {
         return ResponseEntity.ok(obra);
     }
 
+    /** Asignar o cambiar el técnico responsable. Solo Supervisor. */
+    @PreAuthorize("hasRole('SUPERVISOR')")
+    @PatchMapping("/{id}/tecnico")
+    public ResponseEntity<DetallesObraDTO> asignarTecnico(
+            @PathVariable Long id,
+            @RequestBody @Valid AsignarTecnicoDTO datos,
+            @AuthenticationPrincipal Usuario actor) {
+        // Solicita el cambio de técnico responsable
+        var obra = obraService.asignarTecnico(id, datos, actor);
+        // Devuelve la obra con el técnico actualizado
+        return ResponseEntity.ok(obra);
+    }
 
 }

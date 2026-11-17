@@ -74,4 +74,9 @@ public class Obra {
         // Finalmente actualiza el estado de la obra.
         this.estado = destino;
     }
+
+    public void asignarTecnico(Usuario tecnico) {
+        // Cambia el técnico responsable de la obra.
+        this.tecnico = tecnico;
+    }
 }

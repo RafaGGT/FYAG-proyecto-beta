@@ -1,19 +1,13 @@
 package com.inacap.fyagobras.domain.factura.dto;
 
 import jakarta.validation.constraints.Digits;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record EmitirFacturaDTO(
-        @NotBlank(message = "El número de factura es obligatorio")
-        @Size(max = 30, message = "El número de factura no puede superar 30 caracteres")
-        String numeroFactura,
-
         @NotNull(message = "Debe seleccionar una obra")
         Long obraId,
 

@@ -1,5 +1,6 @@
 package com.inacap.fyagobras.domain.user;
 
+import com.inacap.fyagobras.domain.audit.AuditoriaService;
 import com.inacap.fyagobras.domain.user.dto.*;
 import com.inacap.fyagobras.domain.user.repository.UsuarioRepository;
 import com.inacap.fyagobras.domain.user.validation.create.ValidarCrearUsuario;
@@ -15,7 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class UsuarioService {
@@ -28,6 +31,8 @@ public class UsuarioService {
     private List<ValidarCrearUsuario> crearValidador;
     @Autowired
     private List<ValidarActualizarUsuario> actualizarValidador;
+    @Autowired
+    private AuditoriaService auditoriaService;
 
     @Value("${app.login.max-intentos:5}")
     private int maxIntentos;
@@ -35,7 +40,7 @@ public class UsuarioService {
     private long bloqueoMinutos;
 
     @Transactional
-    public DetallesUsuarioDTO registrar(RegistrarUsuarioDTO datos) {
+    public DetallesUsuarioDTO registrar(RegistrarUsuarioDTO datos, Usuario actor) {
         // Ejecuta las reglas de validación para el nuevo usuario.
         crearValidador.forEach(v -> v.validate(datos));
         // Hashea la contraseña antes de construir la entidad.
@@ -44,6 +49,9 @@ public class UsuarioService {
         usuario.setDebeCambiarPassword(true); // obliga a cambiarla en su primer login
         // Persiste el usuario y devuelve sus datos públicos.
         var guardado = usuarioRepository.save(usuario);
+        // Auditoría: quién creó la cuenta y con qué perfil (nunca se guarda la contraseña).
+        auditoriaService.registrar(actor, "usuarios", guardado.getId(), "CREAR_USUARIO", null, null,
+                Map.of("username", guardado.getUsername(), "role", guardado.getRole().name()));
         return new DetallesUsuarioDTO(guardado);
     }
 
@@ -71,7 +79,7 @@ public class UsuarioService {
     }
 
     @Transactional
-    public Usuario administrarCuenta(String username, ModificarRolDTO datos) {
+    public Usuario administrarCuenta(String username, ModificarRolDTO datos, Usuario actor) {
         // Busca la cuenta que se desea administrar.
         var usuario = buscar(username);
 
@@ -81,8 +89,15 @@ public class UsuarioService {
                     "El rol ADMIN es intocable: no se puede asignar ni modificar desde este endpoint.");
         }
 
+        // Se guarda el rol anterior ANTES de aplicar el cambio.
+        var rolAnterior = usuario.getRole().name();
+
         // Aplica el nuevo rol u otros datos administrativos.
         usuario.actualizarCuenta(datos);
+
+        // Auditoría: cambio de perfil (RBAC) con valor anterior y nuevo.
+        auditoriaService.registrar(actor, "usuarios", usuario.getId(), "CAMBIAR_ROL", null,
+                Map.of("role", rolAnterior), Map.of("role", usuario.getRole().name()));
         return usuario;
     }
 
@@ -100,7 +115,7 @@ public class UsuarioService {
 
 
     @Transactional
-    public Usuario cambiarEstado(String username, UsuarioActivoDTO datos) {
+    public Usuario cambiarEstado(String username, UsuarioActivoDTO datos, Usuario actor) {
         // Obtiene el usuario que se quiere activar o desactivar.
         var usuario = buscar(username);
 
@@ -110,7 +125,14 @@ public class UsuarioService {
                     "El rol ADMIN es intocable: no se puede activar/desactivar desde este endpoint.");
         }
 
+        // Se guarda el estado anterior ANTES de aplicar el cambio.
+        var estabaActivo = usuario.isEnabled();
         usuario.cambiarEstado(datos);
+
+        // Auditoría: activación o desactivación de la cuenta (HU-26).
+        auditoriaService.registrar(actor, "usuarios", usuario.getId(),
+                datos.activo() ? "ACTIVAR_USUARIO" : "DESACTIVAR_USUARIO", null,
+                Map.of("activo", estabaActivo), Map.of("activo", datos.activo()));
         return usuario;
     }
 
@@ -132,10 +154,13 @@ public class UsuarioService {
 
         // Guarda la nueva contraseña hasheada.
         usuario.cambiarPassword(passwordEncoder.encode(datos.passwordNueva()));
+
+        // Auditoría: el propio usuario cambió su clave (sin guardar ningún valor de la clave).
+        auditoriaService.registrar(usuario, "usuarios", usuario.getId(), "CAMBIAR_PASSWORD", null, null, null);
     }
 
     @Transactional
-    public CredencialesTemporalesDTO resetearPassword(String username) {
+    public CredencialesTemporalesDTO resetearPassword(String username, Usuario actor) {
         // Recupera la cuenta a la que se asignará una contraseña temporal.
         var usuario = buscar(username);
 
@@ -148,22 +173,38 @@ public class UsuarioService {
         // Genera, hashea y asigna una contraseña temporal.
         var temporal = GeneradorPassword.generar(12);
         usuario.asignarPasswordTemporal(passwordEncoder.encode(temporal));
+
+        // Auditoría: se registra el reset, JAMÁS la contraseña temporal.
+        auditoriaService.registrar(actor, "usuarios", usuario.getId(), "RESETEAR_PASSWORD", null, null,
+                Map.of("debe_cambiar_password", true));
         return new CredencialesTemporalesDTO(new DetallesUsuarioDTO(usuario), temporal);
     }
 
     @Transactional
-    public Usuario desbloquear(String username) {
+    public Usuario desbloquear(String username, Usuario actor) {
         // Busca la cuenta y elimina su bloqueo de acceso.
         var usuario = buscar(username);
         usuario.desbloquear();
+
+        // Auditoría: quién levantó el bloqueo por intentos fallidos.
+        auditoriaService.registrar(actor, "usuarios", usuario.getId(), "DESBLOQUEAR_USUARIO", null, null, null);
         return usuario;
     }
+
+    // --- auditoría de intentos de ingreso ---
 
     @Transactional
     public void registrarFalloLogin(String username) {
         // Si la cuenta existe, acumula el intento fallido y aplica el bloqueo configurado.
-        usuarioRepository.findByUsername(username)
-                .ifPresent(u -> u.registrarFallo(maxIntentos, Duration.ofMinutes(bloqueoMinutos)));
+        usuarioRepository.findByUsername(username).ifPresent(u -> {
+            u.registrarFallo(maxIntentos, Duration.ofMinutes(bloqueoMinutos));
+            // La cuenta está bloqueada solo si la fecha de bloqueo es futura.
+            boolean bloqueada = u.getBloqueadoHasta() != null
+                    && u.getBloqueadoHasta().isAfter(LocalDateTime.now());
+            // Auditoría: cada intento fallido queda registrado.
+            auditoriaService.registrar(u, "usuarios", u.getId(), "LOGIN_FALLIDO", null, null,
+                    Map.of("intentos_fallidos", u.getIntentosFallidos(), "cuenta_bloqueada", bloqueada));
+        });
     }
 
     @Transactional
@@ -173,7 +214,16 @@ public class UsuarioService {
             if (u.getIntentosFallidos() > 0 || u.getBloqueadoHasta() != null) {
                 u.desbloquear();
             }
+            // Auditoría: cada ingreso exitoso queda registrado.
+            auditoriaService.registrar(u, "usuarios", u.getId(), "LOGIN_EXITOSO", null, null, null);
         });
+    }
+
+    @Transactional
+    public void registrarIntentoRechazado(String username, String accion) {
+        // Intentos rechazados porque la cuenta está bloqueada o desactivada.
+        usuarioRepository.findByUsername(username).ifPresent(u ->
+                auditoriaService.registrar(u, "usuarios", u.getId(), accion, null, null, null));
     }
 
     private Usuario buscar(String username) {

@@ -51,4 +51,12 @@ public interface FacturaRepository extends JpaRepository<Factura, Long>, JpaSpec
             """)
     BigDecimal sumaPorCobrar();
 
+    @Query(value = "select nextval('factura_numero_seq')", nativeQuery = true)
+    Long siguienteNumero();
+
+    @Query("""
+            select coalesce(sum(f.monto), 0) from Factura f
+            where f.obra.id = :obraId and f.anulada = false
+            """)
+    BigDecimal totalFacturadoObra(@Param("obraId") Long obraId);
 }

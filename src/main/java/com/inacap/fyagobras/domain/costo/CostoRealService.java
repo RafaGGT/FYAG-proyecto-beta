@@ -14,9 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.math.BigDecimal;
 import java.util.Map;
-
+import java.util.Optional;
 @Service
 public class CostoRealService {
 
@@ -27,59 +27,65 @@ public class CostoRealService {
     /** HU-04: registra (o reemplaza) los costos reales de la obra. Un registro por obra. */
     @Transactional
     public DetallesCostosDTO registrar(Long obraId, RegistrarCostosDTO datos, Usuario actor) {
-        // Busca la obra y valida que el técnico tenga acceso a ella.
         var obra = buscarObra(obraId, actor);
-        // Comprueba si ya existe un registro de costos para decidir entre crear o actualizar.
         var existente = costoRepository.findByObraId(obraId);
+
+        // El valor hora es un monto: solo lo define el Supervisor.
+        // Si lo envía el Técnico, o no viene, se conserva el existente (o 0 la primera vez).
+        BigDecimal valorHora;
+        if (actor.getRole() == Role.TECNICO || datos.valorHora() == null) {
+            valorHora = existente.map(CostoReal::getValorHora).orElse(BigDecimal.ZERO);
+        } else {
+            valorHora = datos.valorHora();
+        }
 
         Map<String, Object> anterior = null;
         CostoReal costo;
         String accion;
         if (existente.isPresent()) {
-            // Conserva el estado previo y reemplaza los valores del registro existente.
             costo = existente.get();
+            // Si no cambió ningún valor, no se actualiza ni se registra auditoría
+            if (costo.getMateriales().compareTo(datos.materiales()) == 0
+                    && costo.getHorasTecnicas().compareTo(datos.horasTecnicas()) == 0
+                    && costo.getValorHora().compareTo(valorHora) == 0) {
+                return DetallesCostosDTO.para(costo, actor.getRole());
+            }
             anterior = mapa(costo);
-            costo.actualizar(datos.materiales(), datos.horasTecnicas(), datos.valorHora());
+            costo.actualizar(datos.materiales(), datos.horasTecnicas(), valorHora);
             accion = "ACTUALIZAR_COSTOS";
         } else {
-            // Crea el primer registro de costos de la obra.
-            costo = costoRepository.save(new CostoReal(obra,
-                    datos.materiales(), datos.horasTecnicas(), datos.valorHora()));
+            costo = costoRepository.save(new CostoReal(obra, datos.materiales(), datos.horasTecnicas(), valorHora));
             accion = "REGISTRAR_COSTOS";
         }
 
-        // Registra la operación realizada y sus valores finales.
-        auditoriaService.registrar(actor, "costos_reales", costo.getId(), accion,
-                null, anterior, mapa(costo));
+        auditoriaService.registrar(actor, "costos_reales", costo.getId(), accion, null, anterior, mapa(costo));
 
-        return new DetallesCostosDTO(costo);
+        // La respuesta se adapta al rol: el Técnico no recibe el valor hora
+        return DetallesCostosDTO.para(costo, actor.getRole());
     }
 
     @Transactional(readOnly = true)
-    public DetallesCostosDTO obtener(Long obraId, Usuario actor) {
-        // Valida el acceso antes de consultar los costos.
+    public Optional<DetallesCostosDTO> obtener(Long obraId, Usuario actor) {
         buscarObra(obraId, actor);
-        // Obtiene el único registro permitido por obra.
-        var costo = costoRepository.findByObraId(obraId)
-                .orElseThrow(() -> new RecursoNoEncontradoException("La obra aún no tiene costos registrados"));
-        return new DetallesCostosDTO(costo);
+        // Cierra el hueco por API (HU-25): aunque el front lo oculte, el backend no lo entrega al Técnico
+        return costoRepository.findByObraId(obraId)
+                .map(costo -> DetallesCostosDTO.para(costo, actor.getRole()));
     }
 
-    /** HU-04: diferencia entre el presupuesto aprobado y el costo real. */
+    /** HU-04: diferencia entre el presupuesto aprobado y el costo real. Vacío si la obra aún no tiene costos. */
     @Transactional(readOnly = true)
-    public RentabilidadDTO rentabilidad(Long obraId) {
-        // Recupera la obra y su costo real para comparar ambos montos.
+    public Optional<RentabilidadDTO> rentabilidad(Long obraId) {
+        // Recupera la obra para comparar su presupuesto con el costo ejecutado.
         var obra = obraRepository.findById(obraId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Obra no encontrada"));
-        var costo = costoRepository.findByObraId(obraId)
-                .orElseThrow(() -> new RecursoNoEncontradoException("La obra aún no tiene costos registrados"));
 
-        var presupuesto = obra.getPresupuesto().getMontoTotal();
-        var total = costo.costoTotal();
-
-        // Calcula la diferencia entre lo presupuestado y el costo ejecutado.
-        return new RentabilidadDTO(obraId, presupuesto, costo.getMateriales(),
-                costo.costoManoObra(), total, presupuesto.subtract(total));
+        return costoRepository.findByObraId(obraId).map(costo -> {
+            var presupuesto = obra.getPresupuesto().getMontoTotal();
+            var total = costo.costoTotal();
+            // Calcula la diferencia entre lo presupuestado y el costo ejecutado.
+            return new RentabilidadDTO(obraId, presupuesto, costo.getMateriales(),
+                    costo.costoManoObra(), total, presupuesto.subtract(total));
+        });
     }
 
     /** El Técnico solo opera sobre las obras que tiene asignadas (HU-24). */

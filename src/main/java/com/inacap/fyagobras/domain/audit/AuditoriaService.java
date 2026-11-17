@@ -1,5 +1,7 @@
 package com.inacap.fyagobras.domain.audit;
 
+import com.inacap.fyagobras.domain.audit.dto.DetallesAuditoriaDTO;
+import com.inacap.fyagobras.domain.audit.repository.AuditoriaRepository;
 import com.inacap.fyagobras.domain.user.Usuario;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +11,10 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
-
+import java.time.ZoneId;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.time.LocalDate;
 import java.util.Map;
 
 @Service
@@ -17,9 +22,10 @@ public class AuditoriaService {
 
     private static final Logger log = LoggerFactory.getLogger(AuditoriaService.class);
     private static final int MAX_INTENTOS = 3;
-
+    private static final ZoneId ZONA = ZoneId.of("America/Santiago");
     @Autowired private MongoTemplate mongo;
     @Autowired private ApplicationEventPublisher publisher;
+    @Autowired private AuditoriaRepository auditoriaRepository;
 
     /** Los módulos llaman a este método. El guardado real ocurre solo si la transacción se confirma. */
     public void registrar(Usuario actor, String entidad, Long entidadId, String accion,
@@ -45,5 +51,20 @@ public class AuditoriaService {
         }
         log.error("Auditoría NO guardada tras {} intentos (revisar manualmente): {} {} id={}",
                 MAX_INTENTOS, registro.getAccion(), registro.getEntidad(), registro.getEntidadId());
+    }
+
+    public Page<DetallesAuditoriaDTO> listar(Pageable paginacion) {
+        return auditoriaRepository.findAll(paginacion).map(DetallesAuditoriaDTO::new);
+    }
+
+    public Page<DetallesAuditoriaDTO> listarPorUsuario(Long usuarioId, Pageable paginacion) {
+        return auditoriaRepository.findByUsuarioId(usuarioId, paginacion).map(DetallesAuditoriaDTO::new);
+    }
+
+    public Page<DetallesAuditoriaDTO> listarPorFecha(LocalDate desde, LocalDate hasta, Pageable paginacion) {
+        // Incluye el día "hasta" completo
+        var inicio = desde.atStartOfDay(ZONA).toInstant();
+        var fin = hasta.plusDays(1).atStartOfDay(ZONA).toInstant();
+        return auditoriaRepository.findByFechaBetween(inicio, fin, paginacion).map(DetallesAuditoriaDTO::new);
     }
 }
