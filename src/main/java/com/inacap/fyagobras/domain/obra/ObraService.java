@@ -4,6 +4,8 @@ import com.inacap.fyagobras.domain.audit.AuditoriaService;
 import com.inacap.fyagobras.domain.costo.repository.CostoRealRepository;
 import com.inacap.fyagobras.domain.factura.EstadoPago;
 import com.inacap.fyagobras.domain.factura.repository.FacturaRepository;
+import com.inacap.fyagobras.domain.notificacion.NotificacionService;
+import com.inacap.fyagobras.domain.notificacion.TipoNotificacion;
 import com.inacap.fyagobras.domain.obra.dto.CambiarEstadoObraDTO;
 import com.inacap.fyagobras.domain.obra.dto.DetallesObraDTO;
 import com.inacap.fyagobras.domain.obra.dto.RegistrarObraDTO;
@@ -24,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.inacap.fyagobras.domain.obra.dto.AsignarTecnicoDTO;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -36,6 +39,7 @@ public class ObraService {
     @Autowired private AuditoriaService auditoriaService;
     @Autowired private CostoRealRepository costoRepository;
     @Autowired private FacturaRepository facturaRepository;
+    @Autowired private NotificacionService notificacionService;
 
     /** HU-05: la obra solo se crea desde un presupuesto aprobado, con tipo vigente y técnico activo. */
     @Transactional
@@ -43,7 +47,7 @@ public class ObraService {
         // Verifica que el presupuesto exista y esté aprobado
         var presupuesto = presupuestoRepository.findById(datos.presupuestoId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Presupuesto no encontrado"));
-                // si el presupuesto no está aprobado, lanza una excepción de conflicto de negocio
+        // si el presupuesto no está aprobado, lanza una excepción de conflicto de negocio
         if (presupuesto.getEstado() != EstadoPresupuesto.APROBADO) {
             throw new ConflictoNegocioException("Solo se puede crear una obra desde un presupuesto APROBADO.");
         } // Verifica que no exista una obra asociada al presupuesto
@@ -53,7 +57,7 @@ public class ObraService {
         }
         // Verifica que el tipo de servicio exista y esté activo
         var tipo = tipoServicioRepository.findById(datos.tipoServicioId())
-        // si el tipo de servicio no existe, lanza una excepción de recurso no encontrado
+                // si el tipo de servicio no existe, lanza una excepción de recurso no encontrado
                 .orElseThrow(() -> new RecursoNoEncontradoException("Tipo de servicio no encontrado"));
         if (!tipo.isActivo()) {
             throw new ConflictoNegocioException("El tipo de servicio ya no está vigente.");
@@ -73,6 +77,9 @@ public class ObraService {
                 Map.of("estado", obra.getEstado().name(),
                         "presupuesto_id", presupuesto.getId(),
                         "tecnico_id", tecnico.getId()));
+
+        notificacionService.notificar(tecnico, TipoNotificacion.OBRA_ASIGNADA,
+                "Se te asignó la obra «" + obra.getNombre() + "».", obra.getId(), "info");
 
         return new DetallesObraDTO(obra);
     }
@@ -160,7 +167,40 @@ public class ObraService {
                 Map.of("estado", origen.name()),
                 Map.of("estado", destino.name()));
 
+        notificarCambioEstado(obra, origen, destino, datos.motivo(), actor);
+
         return new DetallesObraDTO(obra);
+    }
+
+    /** Avisa al técnico de la obra y, según el estado, a Finanzas y Gerencia (nunca incluye montos). */
+    private void notificarCambioEstado(Obra obra, EstadoObra origen, EstadoObra destino, String motivo, Usuario actor) {
+        var texto = "Obra «" + obra.getNombre() + "»: " + etiqueta(origen) + " → " + etiqueta(destino) + ".";
+        if (destino == EstadoObra.SUSPENDIDA) {
+            texto += " Motivo: " + motivo.trim();
+        }
+        var tono = switch (destino) {
+            case FINALIZADA -> "ok";
+            case SUSPENDIDA -> "warn";
+            case CANCELADA -> "bad";
+            case EN_PROCESO -> "info";
+        };
+        notificacionService.notificar(obra.getTecnico(), TipoNotificacion.CAMBIO_ESTADO, texto, obra.getId(), tono);
+        if (destino == EstadoObra.FINALIZADA) {
+            notificacionService.notificarRoles(List.of(Role.FINANZAS, Role.GERENCIA),
+                    TipoNotificacion.LISTA_PARA_FACTURAR, texto + " Lista para facturar.", obra.getId(), tono, actor);
+        } else if (destino == EstadoObra.SUSPENDIDA || destino == EstadoObra.CANCELADA) {
+            notificacionService.notificarRoles(List.of(Role.GERENCIA),
+                    TipoNotificacion.CAMBIO_ESTADO, texto, obra.getId(), tono, actor);
+        }
+    }
+
+    private static String etiqueta(EstadoObra estado) {
+        return switch (estado) {
+            case EN_PROCESO -> "En proceso";
+            case FINALIZADA -> "Finalizada";
+            case SUSPENDIDA -> "Suspendida";
+            case CANCELADA -> "Cancelada";
+        };
     }
 
     /** HU-07: asigna o reemplaza al técnico responsable de una obra. Solo técnicos activos. */
@@ -191,11 +231,17 @@ public class ObraService {
                 ? null
                 : Map.of("tecnico_id", obra.getTecnico().getId());
 
+        var tecnicoAnterior = obra.getTecnico();
         obra.asignarTecnico(nuevo);
 
         // Auditoría: quién cambió al responsable, de quién a quién
         auditoriaService.registrar(actor, "obras", obra.getId(), "ASIGNAR_TECNICO", null,
                 anterior, Map.of("tecnico_id", nuevo.getId()));
+
+        notificacionService.notificar(nuevo, TipoNotificacion.OBRA_ASIGNADA,
+                "Se te asignó la obra «" + obra.getNombre() + "».", obra.getId(), "info");
+        notificacionService.notificar(tecnicoAnterior, TipoNotificacion.OBRA_RETIRADA,
+                "Ya no tienes asignada la obra «" + obra.getNombre() + "».", obra.getId(), "warn");
 
         return new DetallesObraDTO(obra);
     }
