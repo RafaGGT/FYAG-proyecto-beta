@@ -19,7 +19,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import com.inacap.fyagobras.domain.obra.dto.CambiarEstadoObraDTO;
 import com.inacap.fyagobras.domain.obra.dto.AsignarTecnicoDTO;
-
+import com.inacap.fyagobras.domain.notificacion.NotificacionService;
+import com.inacap.fyagobras.domain.notificacion.TipoNotificacion;
+import java.util.List;
 @RestController
 @RequestMapping("/obras")
 public class ObraController {
@@ -28,6 +30,8 @@ public class ObraController {
     private ObraService obraService;
     @Autowired
     private FacturaRepository facturaRepository;
+    @Autowired
+    private NotificacionService notificacionService;
 
     /** Crear obra desde un presupuesto aprobado. Solo Supervisor. */
     @PreAuthorize("hasRole('SUPERVISOR')")

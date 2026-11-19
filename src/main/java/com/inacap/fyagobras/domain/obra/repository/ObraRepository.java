@@ -7,9 +7,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+import java.util.Optional;
+
 public interface ObraRepository extends JpaRepository<Obra, Long>, JpaSpecificationExecutor<Obra> {
 
     boolean existsByPresupuestoId(Long presupuestoId);
+
+    Optional<Obra> findByPresupuestoId(Long presupuestoId);
 
     Page<Obra> findByEstado(EstadoObra estado, Pageable pageable);
 

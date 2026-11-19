@@ -20,6 +20,8 @@ public interface FacturaRepository extends JpaRepository<Factura, Long>, JpaSpec
     Page<Factura> findByEstadoPago(EstadoPago estadoPago, Pageable pageable);
     boolean existsByObraIdAndEstadoPago(Long obraId, EstadoPago estadoPago);
 
+    List<Factura> findByObraIdAndAnuladaFalseOrderByIdAsc(Long obraId);
+
     @Query("""
             select c.id as clienteId, c.rut as rut, c.razonSocial as razonSocial,
                    count(f) as facturasPendientes,

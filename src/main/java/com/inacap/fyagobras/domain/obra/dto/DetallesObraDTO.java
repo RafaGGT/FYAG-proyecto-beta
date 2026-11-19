@@ -4,6 +4,7 @@ import com.inacap.fyagobras.domain.obra.EstadoObra;
 import com.inacap.fyagobras.domain.obra.Obra;
 
 import java.time.LocalDate;
+import java.util.List;
 
 public record DetallesObraDTO(
         Long id,
@@ -18,7 +19,9 @@ public record DetallesObraDTO(
         Long tipoServicioId,
         String tipoServicioNombre,
         Long tecnicoId,
-        String tecnicoNombre
+        String tecnicoNombre,
+        // Servicios/materiales cotizados por Finanzas: solo la descripción, nunca el monto
+        List<String> itemsPresupuesto
 ) {
     public DetallesObraDTO(Obra o) {
         this(o.getId(), o.getNombre(), o.getDescripcion(), o.getEstado(),
@@ -27,6 +30,7 @@ public record DetallesObraDTO(
                 o.getPresupuesto().getCliente().getRazonSocial(),
                 o.getTipoServicio().getId(), o.getTipoServicio().getNombre(),
                 o.getTecnico() == null ? null : o.getTecnico().getId(),
-                o.getTecnico() == null ? null : o.getTecnico().getNombre() + " " + o.getTecnico().getApellido());
+                o.getTecnico() == null ? null : o.getTecnico().getNombre() + " " + o.getTecnico().getApellido(),
+                o.getPresupuesto().getItems().stream().map(i -> i.getDescripcion()).toList());
     }
 }
