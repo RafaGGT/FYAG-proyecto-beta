@@ -20,8 +20,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/facturas")
+// Este controlador recibe solicitudes relacionadas con facturas.
+// Convierte los datos JSON o los parámetros de URL en llamadas al FacturaService.
 public class FacturaController {
 
+    // Servicio que aplica las reglas comerciales y registra los cambios.
     @Autowired
     private FacturaService facturaService;
 
@@ -33,11 +36,13 @@ public class FacturaController {
             @AuthenticationPrincipal Usuario actor,
             UriComponentsBuilder uriComponentsBuilder) {
 
+        // @Valid valida el monto, obra y fechas antes de iniciar la emisión.
+        // El actor permite registrar quién emitió el documento.
         // Envía los datos al servicio para emitir la factura.
         var creada = facturaService.emitir(datos, actor);
-        // Construye la URI del recurso recién creado.
+        // Construye la URI del recurso recién creado, por ejemplo /facturas/500.
         var uri = uriComponentsBuilder.path("/facturas/{id}").buildAndExpand(creada.id()).toUri();
-        // Responde con estado 201 y los datos de la factura.
+        // 201 Created indica creación, Ubicación apunta al recurso y el cuerpo contiene sus detalles.
         return ResponseEntity.created(uri).body(creada);
     }
 
@@ -48,9 +53,11 @@ public class FacturaController {
             @RequestParam(required = false) EstadoPago estadoPago,
             @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.DESC) Pageable paginacion) {
 
+        // estadoPago es opcional; si se omite, el servicio puede devolver todas las facturas.
+        // PagedModel encapsula la página y permite entregarla como JSON con metadatos.
         // Consulta las facturas aplicando el filtro y la paginación.
         var facturas = facturaService.listar(estadoPago, paginacion);
-        // Envuelve el resultado paginado y responde con estado 200.
+        // 200 OK indica una consulta exitosa.
         return ResponseEntity.ok(new PagedModel<>(facturas));
     }
 
@@ -58,6 +65,8 @@ public class FacturaController {
     @PreAuthorize("hasAnyRole('FINANZAS','GERENCIA')")
     @GetMapping("/{id}")
     public ResponseEntity<DetallesFacturaDTO> detalle(@PathVariable Long id) {
+        // @PathVariable obtiene el identificador de la URL.
+        // 200 OK entrega la factura y sus datos; si no existe, el gestor global devuelve el error correspondiente.
         // Obtiene la factura solicitada desde el servicio.
         var factura = facturaService.obtener(id);
         // Devuelve el detalle encontrado.
@@ -72,9 +81,11 @@ public class FacturaController {
             @RequestBody @Valid RegistrarPagoDTO datos,
             @AuthenticationPrincipal Usuario actor) {
 
+        // @RequestBody contiene la fecha y datos del pago; @Valid comprueba sus reglas.
+        // El actor se usa para auditoría y el ID identifica la factura.
         // Registra el pago asociado a la factura.
         var factura = facturaService.registrarPago(id, datos, actor);
-        // Devuelve la factura con su estado actualizado.
+        // 200 OK entrega el estado PAGADO y la fecha del pago.
         return ResponseEntity.ok(factura);
     }
 
@@ -108,7 +119,13 @@ public class FacturaController {
     @PreAuthorize("hasRole('FINANZAS')")
     @GetMapping("/obras-facturables")
     public ResponseEntity<List<ObraFacturableDTO>> obrasFacturables() {
+        // No recibe filtros en el cuerpo ni en la URL.
+        // 200 OK entrega las obras finalizadas que todavía tienen saldo por facturar.
         return ResponseEntity.ok(facturaService.obrasFacturables());
     }
 
 }
+        // El cuerpo incluye el motivo obligatorio de la anulación.
+        // 200 OK indica que el pago fue revertido y devuelve la factura actualizada.
+        // busqueda filtra por RUT o razón social y es opcional.
+        // 200 OK entrega una lista que puede estar vacía.

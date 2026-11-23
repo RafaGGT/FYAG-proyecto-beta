@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+// Clase IncidenciaService: implementa la funcionalidad del dominio.
 public class IncidenciaService {
 
     @Autowired private IncidenciaObraRepository repository;
@@ -30,6 +31,7 @@ public class IncidenciaService {
 
     /** El Técnico solo comenta en sus obras. La obra cerrada ya no admite novedades. */
     @Transactional
+    // Ejecuta la operacion registrar.
     public DetallesIncidenciaDTO registrar(Long obraId, RegistrarIncidenciaDTO datos, Usuario actor) {
         var obra = buscarObra(obraId, actor);
         if (obra.getEstado() == EstadoObra.FINALIZADA || obra.getEstado() == EstadoObra.CANCELADA) {
@@ -48,11 +50,13 @@ public class IncidenciaService {
     }
 
     @Transactional(readOnly = true)
+    // Ejecuta la operacion listar.
     public List<DetallesIncidenciaDTO> listar(Long obraId, Usuario actor) {
         buscarObra(obraId, actor);
         return repository.findByObraIdOrderByFechaDesc(obraId).stream().map(DetallesIncidenciaDTO::new).toList();
     }
 
+    // Ejecuta la operacion avisar.
     private void avisar(Obra obra, TipoIncidencia tipo, String texto, Usuario actor) {
         var resumen = texto.length() <= 100 ? texto : texto.substring(0, 99) + "…";
         var mensaje = tipo.etiqueta() + " en «" + obra.getNombre() + "» ("

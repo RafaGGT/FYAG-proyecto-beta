@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.List;
 
 @Service
+// Clase TipoServicioService: implementa la funcionalidad del dominio.
 public class TipoServicioService {
 
     @Autowired
@@ -23,6 +24,7 @@ public class TipoServicioService {
 
     /** Lista para el desplegable: solo vigentes. Con incluirInactivos, el panel del Supervisor ve todos. */
     @Transactional(readOnly = true)
+    // Ejecuta la operacion listar.
     public List<DetallesTipoServicioDTO> listar(boolean incluirInactivos) {
         // Selecciona la consulta según el nivel de detalle solicitado.
         var tipos = incluirInactivos
@@ -33,6 +35,7 @@ public class TipoServicioService {
     }
 
     @Transactional
+    // Ejecuta la operacion registrar.
     public DetallesTipoServicioDTO registrar(RegistrarTipoServicioDTO datos, Usuario actor) {
         var nombre = datos.nombre().trim();
         if (repository.existsByNombreIgnoreCase(nombre)) {
@@ -46,6 +49,7 @@ public class TipoServicioService {
     }
 
     @Transactional
+    // Ejecuta la operacion modificar.
     public DetallesTipoServicioDTO modificar(Long id, ModificarTipoServicioDTO datos, Usuario actor) {
         var tipo = buscar(id);
         var nombre = datos.nombre().trim();
@@ -63,6 +67,7 @@ public class TipoServicioService {
     }
 
     @Transactional
+    // Ejecuta la operacion cambiarEstado.
     public DetallesTipoServicioDTO cambiarEstado(Long id, CambiarEstadoTipoServicioDTO datos, Usuario actor) {
         var tipo = buscar(id);
         var anterior = tipo.isActivo();
@@ -74,6 +79,7 @@ public class TipoServicioService {
         }
         return new DetallesTipoServicioDTO(tipo);
     }
+    // Ejecuta la operacion buscar.
     private TipoServicio buscar(Long id) {
         // Centraliza la búsqueda y el error para los métodos del servicio.
         return repository.findById(id)

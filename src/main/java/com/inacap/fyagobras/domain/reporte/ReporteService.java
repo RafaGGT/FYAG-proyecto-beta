@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Locale;
 
 @Service
+// Clase ReporteService: implementa la funcionalidad del dominio.
 public class ReporteService {
 
     private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd-MM-yyyy");
@@ -39,6 +40,7 @@ public class ReporteService {
 
     /** HU-19 y HU-20: reporte de obras con filtros por fecha de inicio, cliente, técnico y estado. */
     @Transactional(readOnly = true)
+    // Ejecuta la operacion obras.
     public ArchivoReporte obras(FormatoReporte formato, LocalDate desde, LocalDate hasta,
                                 Long clienteId, Long tecnicoId, EstadoObra estado) {
         // Valida que el intervalo de fechas sea coherente.
@@ -86,11 +88,13 @@ public class ReporteService {
         var datos = new ReporteDatos("Reporte de obras", filtros,
                 List.of("Obra", "Cliente", "Tipo de servicio", "Técnico", "Estado", "Inicio", "Término"),
                 filas, resumen);
+        // Ejecuta la operacion empaquetar.
         return empaquetar(datos, formato, "reporte-obras");
     }
 
     /** HU-19: reporte de cobranzas con filtros por fecha de emisión, cliente y estado de pago. */
     @Transactional(readOnly = true)
+    // Ejecuta la operacion cobranzas.
     public ArchivoReporte cobranzas(FormatoReporte formato, LocalDate desde, LocalDate hasta,
                                     Long clienteId, EstadoPago estadoPago) {
         // Valida el rango y prepara el formato monetario chileno.
@@ -139,9 +143,11 @@ public class ReporteService {
         var datos = new ReporteDatos("Reporte de cobranzas", filtros,
                 List.of("N° factura", "Cliente", "Obra", "Emisión", "Vencimiento", "Pago", "Monto", "Estado de pago"),
                 filas, resumen);
+        // Ejecuta la operacion empaquetar.
         return empaquetar(datos, formato, "reporte-cobranzas");
     }
 
+    // Ejecuta la operacion empaquetar.
     private ArchivoReporte empaquetar(ReporteDatos datos, FormatoReporte formato, String base) {
         // Usa la fecha actual para generar un nombre de archivo único.
         var hoy = LocalDate.now();
@@ -154,6 +160,7 @@ public class ReporteService {
         };
     }
 
+    // Ejecuta la operacion validarRango.
     private void validarRango(LocalDate desde, LocalDate hasta) {
         // Rechaza rangos invertidos antes de consultar la base de datos.
         if (desde != null && hasta != null && desde.isAfter(hasta)) {
@@ -161,16 +168,19 @@ public class ReporteService {
         }
     }
 
+    // Ejecuta la operacion cliente.
     private Cliente cliente(Long id) {
         return clienteRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Cliente no encontrado"));
     }
 
+    // Ejecuta la operacion tecnico.
     private Usuario tecnico(Long id) {
         return usuarioRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Técnico no encontrado"));
     }
 
+    // Ejecuta la operacion fecha.
     private String fecha(LocalDate fecha) {
         return fecha == null ? "-" : FECHA.format(fecha);
     }

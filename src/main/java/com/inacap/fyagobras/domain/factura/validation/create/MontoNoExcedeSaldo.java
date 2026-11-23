@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
+// Validador MontoNoExcedeSaldo: aplica una regla del dominio.
 public class MontoNoExcedeSaldo implements ValidarEmitirFactura {
 
     @Autowired
@@ -17,6 +18,7 @@ public class MontoNoExcedeSaldo implements ValidarEmitirFactura {
     private FacturaRepository facturaRepository;
 
     @Override
+    // Ejecuta la operacion validate.
     public void validate(EmitirFacturaDTO data) {
         var obra = obraRepository.findById(data.obraId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Obra no encontrada"));

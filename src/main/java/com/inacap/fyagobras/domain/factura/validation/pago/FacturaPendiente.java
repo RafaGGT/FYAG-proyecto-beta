@@ -7,9 +7,11 @@ import com.inacap.fyagobras.infra.exception.ConflictoNegocioException;
 import org.springframework.stereotype.Component;
 
 @Component
+// Validador FacturaPendiente: aplica una regla del dominio.
 public class FacturaPendiente implements ValidarRegistrarPago {
 
     @Override
+    // Ejecuta la operacion validate.
     public void validate(Factura factura, RegistrarPagoDTO data) {
         if (factura.isAnulada()) {
             throw new ConflictoNegocioException("La factura está anulada y no admite pagos.");

@@ -6,6 +6,7 @@ import com.inacap.fyagobras.domain.factura.Factura;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+// DTO DetallesFacturaDTO: transporta datos entre el dominio y la API.
 public record DetallesFacturaDTO(
         Long id,
         String numeroFactura,
@@ -20,6 +21,7 @@ public record DetallesFacturaDTO(
         boolean anulada,
         String motivoAnulacion
 ) {
+    // Ejecuta la operacion DetallesFacturaDTO.
     public DetallesFacturaDTO(Factura f) {
         this(f.getId(), f.getNumeroFactura(),
                 f.getObra().getId(), f.getObra().getNombre(),

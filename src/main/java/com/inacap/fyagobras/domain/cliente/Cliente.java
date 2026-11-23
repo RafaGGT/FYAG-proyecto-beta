@@ -15,6 +15,7 @@ import lombok.ToString;
 @Setter
 @NoArgsConstructor
 @ToString
+// Clase Cliente: implementa la funcionalidad del dominio.
 public class Cliente {
 
     @Id
@@ -36,6 +37,7 @@ public class Cliente {
     @Column
     private String telefono;
 
+    // Ejecuta la operacion Cliente.
     public Cliente(RegistrarClienteDTO datos) {
         this.rut = datos.rut().toUpperCase();   // la K del dígito verificador siempre en mayúscula
         this.razonSocial = datos.razonSocial();

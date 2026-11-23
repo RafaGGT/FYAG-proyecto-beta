@@ -1,5 +1,6 @@
 package com.inacap.fyagobras.domain.seguimiento;
 
+// Indica si un paso del seguimiento esta pendiente o completado.
 public enum EstadoPaso {
     COMPLETADO, // ya ocurrió
     ACTUAL,     // el proceso está esperando este paso

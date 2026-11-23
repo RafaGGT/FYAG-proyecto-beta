@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+// Clase FacturaService: implementa la funcionalidad del dominio.
 public class FacturaService {
 
     @Autowired private FacturaRepository facturaRepository;
@@ -35,6 +36,7 @@ public class FacturaService {
      * El número de factura se genera automáticamente; el estado de pago inicial es PENDIENTE.
      */
     @Transactional
+    // Ejecuta la operacion emitir.
     public DetallesFacturaDTO emitir(EmitirFacturaDTO datos, Usuario actor) {
         // Ejecuta las reglas de negocio para emitir la factura.
         emitirValidador.forEach(v -> v.validate(datos));
@@ -64,6 +66,7 @@ public class FacturaService {
 
     /** Obras FINALIZADAS que aún tienen saldo por facturar (presupuesto menos lo ya facturado). */
     @Transactional(readOnly = true)
+    // Ejecuta la operacion obrasFacturables.
     public List<ObraFacturableDTO> obrasFacturables() {
         return obraRepository.findByEstado(EstadoObra.FINALIZADA, Pageable.unpaged()).stream()
                 .map(o -> {
@@ -79,6 +82,7 @@ public class FacturaService {
     }
 
     @Transactional(readOnly = true)
+    // Ejecuta la operacion listar.
     public Page<DetallesFacturaDTO> listar(EstadoPago estadoPago, Pageable paginacion) {
         // Filtra por estado cuando se recibe uno; de lo contrario lista todas.
         var pagina = (estadoPago == null)
@@ -89,6 +93,7 @@ public class FacturaService {
     }
 
     @Transactional(readOnly = true)
+    // Ejecuta la operacion obtener.
     public DetallesFacturaDTO obtener(Long id) {
         // Busca la factura solicitada o informa que no existe.
         var factura = facturaRepository.findById(id)
@@ -98,6 +103,7 @@ public class FacturaService {
 
     /** HU-14 y HU-30: registra el pago de una factura pendiente. */
     @Transactional
+    // Ejecuta la operacion registrarPago.
     public DetallesFacturaDTO registrarPago(Long id, RegistrarPagoDTO datos, Usuario actor) {
         // Recupera la factura antes de validar y registrar el pago.
         var factura = facturaRepository.findById(id)
@@ -123,6 +129,7 @@ public class FacturaService {
 
     /** HU-29: anula un pago registrado por error mediante una nota de crédito interna. No elimina nada. */
     @Transactional
+    // Ejecuta la operacion anularPago.
     public DetallesFacturaDTO anularPago(Long id, AnularPagoDTO datos, Usuario actor) {
         // Recupera la factura cuyo pago se quiere anular.
         var factura = facturaRepository.findById(id)
@@ -151,6 +158,7 @@ public class FacturaService {
 
     /** HU-15: clientes con al menos una factura PENDIENTE, con monto adeudado y días de atraso. */
     @Transactional(readOnly = true)
+    // Ejecuta la operacion clientesConPagosPendientes.
     public List<ClientePendienteDTO> clientesConPagosPendientes(String busqueda) {
         // Usa la fecha local para calcular los días de atraso.
         var hoy = LocalDate.now();

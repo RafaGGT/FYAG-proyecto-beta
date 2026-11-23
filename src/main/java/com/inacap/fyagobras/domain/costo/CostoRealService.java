@@ -18,6 +18,7 @@ import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Optional;
 @Service
+// Clase CostoRealService: implementa la funcionalidad del dominio.
 public class CostoRealService {
 
     @Autowired private CostoRealRepository costoRepository;
@@ -26,15 +27,21 @@ public class CostoRealService {
 
     /** HU-04: registra (o reemplaza) los costos reales de la obra. Un registro por obra. */
     @Transactional
+    // Ejecuta la operacion registrar.
     public DetallesCostosDTO registrar(Long obraId, RegistrarCostosDTO datos, Usuario actor) {
+        // Recupera la obra y valida que el actor tenga permiso para operar sobre ella.
         var obra = buscarObra(obraId, actor);
+        // Recupera el registro de costos existente, si lo hay.
         var existente = costoRepository.findByObraId(obraId);
 
         // El valor hora es un monto: solo lo define el Supervisor.
         // Si lo envía el Técnico, o no viene, se conserva el existente (o 0 la primera vez).
         BigDecimal valorHora;
+        // Si el actor es un Técnico o no se proporcionó valorHora, se mantiene el valor existente o se inicializa en cero.
         if (actor.getRole() == Role.TECNICO || datos.valorHora() == null) {
+            // Si existe un registro previo, se conserva su valorHora; de lo contrario, se inicializa en cero.
             valorHora = existente.map(CostoReal::getValorHora).orElse(BigDecimal.ZERO);
+            // Si el actor es un Supervisor y se proporcionó valorHora, se utiliza el valor enviado.
         } else {
             valorHora = datos.valorHora();
         }
@@ -65,6 +72,7 @@ public class CostoRealService {
     }
 
     @Transactional(readOnly = true)
+    // Ejecuta la operacion obtener.
     public Optional<DetallesCostosDTO> obtener(Long obraId, Usuario actor) {
         buscarObra(obraId, actor);
         // Cierra el hueco por API (HU-25): aunque el front lo oculte, el backend no lo entrega al Técnico
@@ -74,13 +82,18 @@ public class CostoRealService {
 
     /** HU-04: diferencia entre el presupuesto aprobado y el costo real. Vacío si la obra aún no tiene costos. */
     @Transactional(readOnly = true)
+    // Ejecuta la operacion rentabilidad.
     public Optional<RentabilidadDTO> rentabilidad(Long obraId) {
         // Recupera la obra para comparar su presupuesto con el costo ejecutado.
         var obra = obraRepository.findById(obraId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Obra no encontrada"));
-
-        return costoRepository.findByObraId(obraId).map(costo -> {
+        // Recupera los costos reales de la obra y calcula la rentabilidad
+        return costoRepository
+        // findByObraId devuelve un Optional<CostoReal> que se mapea a RentabilidadDTO si está presente
+            .findByObraId(obraId).map(costo -> {
+                // Calcula la rentabilidad: diferencia entre lo presupuestado y lo ejecutado
             var presupuesto = obra.getPresupuesto().getMontoTotal();
+            // Calcula el costo total ejecutado sumando materiales y mano de obra
             var total = costo.costoTotal();
             // Calcula la diferencia entre lo presupuestado y el costo ejecutado.
             return new RentabilidadDTO(obraId, presupuesto, costo.getMateriales(),

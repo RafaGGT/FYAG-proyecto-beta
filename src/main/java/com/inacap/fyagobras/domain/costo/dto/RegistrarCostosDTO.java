@@ -6,6 +6,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 
 import java.math.BigDecimal;
 
+// DTO RegistrarCostosDTO: transporta datos entre el dominio y la API.
 public record RegistrarCostosDTO(
         @NotNull(message = "El costo de materiales es obligatorio")
         @PositiveOrZero(message = "Los materiales no pueden ser negativos")

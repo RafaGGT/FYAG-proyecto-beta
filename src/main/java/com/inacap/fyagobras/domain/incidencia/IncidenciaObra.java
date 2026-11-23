@@ -13,6 +13,7 @@ import java.time.Instant;
 @Table(name = "incidencias_obra")
 @Getter
 @NoArgsConstructor
+// Clase IncidenciaObra: implementa la funcionalidad del dominio.
 public class IncidenciaObra {
 
     @Id
@@ -37,6 +38,7 @@ public class IncidenciaObra {
     @Column(nullable = false)
     private Instant fecha = Instant.now();
 
+    // Ejecuta la operacion IncidenciaObra.
     public IncidenciaObra(Obra obra, Usuario autor, TipoIncidencia tipo, String texto) {
         this.obra = obra;
         this.autor = autor;

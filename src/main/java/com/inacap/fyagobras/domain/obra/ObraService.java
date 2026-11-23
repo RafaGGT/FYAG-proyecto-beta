@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+// Clase ObraService: implementa la funcionalidad del dominio.
 public class ObraService {
 
     @Autowired private ObraRepository obraRepository;
@@ -43,6 +44,7 @@ public class ObraService {
 
     /** HU-05: la obra solo se crea desde un presupuesto aprobado, con tipo vigente y técnico activo. */
     @Transactional
+    // Ejecuta la operacion registrar.
     public DetallesObraDTO registrar(RegistrarObraDTO datos, Usuario actor) {
         // Verifica que el presupuesto exista y esté aprobado
         var presupuesto = presupuestoRepository.findById(datos.presupuestoId())
@@ -86,6 +88,7 @@ public class ObraService {
 
     /** HU-24: el Técnico solo ve las obras donde figura como técnico asignado. */
     @Transactional(readOnly = true)
+    // Ejecuta la operacion listar.
     public Page<DetallesObraDTO> listar(EstadoObra estado, Usuario actor, Pageable paginacion) {
         // Determina si el actor debe ver solo sus obras asignadas.
         boolean esTecnico = actor.getRole() == Role.TECNICO;
@@ -105,6 +108,7 @@ public class ObraService {
     }
 
     @Transactional(readOnly = true)
+    // Ejecuta la operacion obtener.
     public DetallesObraDTO obtener(Long id, Usuario actor) {
         // Busca la obra solicitada.
         var obra = obraRepository.findById(id)
@@ -119,6 +123,7 @@ public class ObraService {
     }
 
     @Transactional
+    // Ejecuta la operacion cambiarEstado.
     public DetallesObraDTO cambiarEstado(Long id, CambiarEstadoObraDTO datos, Usuario actor) {
         // Recupera la obra y su estado actual.
         var obra = obraRepository.findById(id)
@@ -194,7 +199,9 @@ public class ObraService {
         }
     }
 
+    // Ejecuta la operacion etiqueta.
     private static String etiqueta(EstadoObra estado) {
+        // Ejecuta la operacion switch.
         return switch (estado) {
             case EN_PROCESO -> "En proceso";
             case FINALIZADA -> "Finalizada";
@@ -205,6 +212,7 @@ public class ObraService {
 
     /** HU-07: asigna o reemplaza al técnico responsable de una obra. Solo técnicos activos. */
     @Transactional
+    // Ejecuta la operacion asignarTecnico.
     public DetallesObraDTO asignarTecnico(Long id, AsignarTecnicoDTO datos, Usuario actor) {
         var obra = obraRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Obra no encontrada"));

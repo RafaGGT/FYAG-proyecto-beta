@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 
+// DTO RegistrarObraDTO: transporta datos entre el dominio y la API.
 public record RegistrarObraDTO(
         @NotBlank(message = "El nombre es obligatorio")
         @Size(max = 30, message = "El nombre no puede superar 30 caracteres")

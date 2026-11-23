@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "tipos_servicio")
 @Getter
 @NoArgsConstructor
+// Clase TipoServicio: implementa la funcionalidad del dominio.
 public class TipoServicio {
 
     @Id
@@ -20,11 +21,13 @@ public class TipoServicio {
     @Column(nullable = false)
     private boolean activo = true;
 
+    // Ejecuta la operacion TipoServicio.
     public TipoServicio(String nombre) {
         this.nombre = nombre;
         this.activo = true;
     }
 
+    // Ejecuta la operacion renombrar.
     public void renombrar(String nombre) {
         // Actualiza el nombre manteniendo el mismo tipo histórico.
         this.nombre = nombre;

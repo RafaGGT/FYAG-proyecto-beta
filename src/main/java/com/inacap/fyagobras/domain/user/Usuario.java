@@ -26,6 +26,7 @@ import java.util.List;
 @NoArgsConstructor
 // Excluye el campo "password" de la representación en cadena (toString) generada por Lombok por motivos de seguridad (evita imprimir contraseñas en los logs)
 @ToString(exclude = "password")
+// Clase Usuario: implementa la funcionalidad del dominio.
 public class Usuario extends Persona implements UserDetails {
 
     // Define la columna del nombre de usuario única y obligatoria
@@ -65,6 +66,7 @@ public class Usuario extends Persona implements UserDetails {
     }
 
     @Override
+    // Ejecuta la operacion isAccountNonExpired.
     public boolean isAccountNonExpired() {
         // Indica si la cuenta ha expirado (por defecto retorna true delegando en UserDetails)
         return UserDetails.super.isAccountNonExpired();
@@ -72,12 +74,14 @@ public class Usuario extends Persona implements UserDetails {
     
     // La cuenta está bloqueada mientras bloqueado_hasta sea una fecha futura
     @Override
+    // Ejecuta la operacion isAccountNonLocked.
     public boolean isAccountNonLocked() {
         // Retorna true si no hay fecha de bloqueo o si la fecha límite de bloqueo ya pasó
         return bloqueadoHasta == null || bloqueadoHasta.isBefore(LocalDateTime.now());
     }
 
     @Override
+    // Ejecuta la operacion isCredentialsNonExpired.
     public boolean isCredentialsNonExpired() {
         // Indica si las credenciales han expirado (por defecto retorna true)
         return UserDetails.super.isCredentialsNonExpired();
@@ -85,6 +89,7 @@ public class Usuario extends Persona implements UserDetails {
     
     // Una cuenta desactivada no puede iniciar sesión
     @Override
+    // Ejecuta la operacion isEnabled.
     public boolean isEnabled() {
         // Retorna el estado activo actual de la entidad
         return this.activo;

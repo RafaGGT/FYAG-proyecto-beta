@@ -4,6 +4,7 @@ package com.inacap.fyagobras.infra.exception;
  * Indica que un token de autenticación no es válido, está expirado o no puede
  * asociarse con un usuario habilitado.
  */
+// Representa tokens de autenticacion invalidos o expirados.
 public class TokenInvalidoException extends RuntimeException {
 
     /**

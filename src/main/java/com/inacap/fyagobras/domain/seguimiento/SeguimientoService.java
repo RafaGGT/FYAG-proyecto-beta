@@ -34,6 +34,7 @@ import java.util.List;
  * y dice en qué paso está y a quién espera. No guarda nada: todo se calcula con los datos que ya existen.
  */
 @Service
+// Clase SeguimientoService: implementa la funcionalidad del dominio.
 public class SeguimientoService {
 
     private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd-MM-yyyy");
@@ -54,22 +55,27 @@ public class SeguimientoService {
 
     /** Seguimiento de un presupuesto (incluye la obra y la cobranza si ya existen). Finanzas y Gerencia. */
     @Transactional(readOnly = true)
+    // Ejecuta la operacion porPresupuesto.
     public SeguimientoDTO porPresupuesto(Long presupuestoId, Usuario actor) {
         var presupuesto = presupuestoRepository.findById(presupuestoId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Presupuesto no encontrado"));
         var obra = obraRepository.findByPresupuestoId(presupuestoId).orElse(null);
+        // Ejecuta la operacion construir.
         return construir(presupuesto, obra, actor);
     }
 
     /** Seguimiento de una obra. Reutiliza la validación de acceso: el Técnico solo ve las suyas. */
     @Transactional(readOnly = true)
+    // Ejecuta la operacion porObra.
     public SeguimientoDTO porObra(Long obraId, Usuario actor) {
         obraService.obtener(obraId, actor);
         var obra = obraRepository.findById(obraId)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Obra no encontrada"));
+        // Ejecuta la operacion construir.
         return construir(obra.getPresupuesto(), obra, actor);
     }
 
+    // Ejecuta la operacion construir.
     private SeguimientoDTO construir(Presupuesto presupuesto, Obra obra, Usuario actor) {
         var creado = new Paso("Presupuesto creado", null, "Finanzas", true,
                 presupuesto.getFechaCreacion(), presupuesto.getNumeroPresupuesto(), null);
@@ -77,7 +83,9 @@ public class SeguimientoService {
         // Un presupuesto rechazado termina el recorrido ahí
         if (presupuesto.getEstado() == EstadoPresupuesto.RECHAZADO) {
             var pasos = List.of(
+                    // Ejecuta la operacion PasoSeguimientoDTO.
                     new PasoSeguimientoDTO(creado.titulo(), creado.detalleHecho(), null, creado.fecha(), EstadoPaso.COMPLETADO),
+                    // Ejecuta la operacion PasoSeguimientoDTO.
                     new PasoSeguimientoDTO("Presupuesto rechazado", "Motivo: " + presupuesto.getMotivoRechazo(),
                             null, null, EstadoPaso.ERROR));
             return new SeguimientoDTO("Presupuesto rechazado", pasos);
@@ -117,6 +125,7 @@ public class SeguimientoService {
             candidatos.add(new Paso("Pago recibido", "Esperando pago del cliente", "Cliente",
                     !facturas.isEmpty() && facturas.stream().allMatch(f -> f.getEstadoPago() == EstadoPago.PAGADO),
                     facturas.stream().map(Factura::getFechaPago).filter(f -> f != null).max(Comparator.naturalOrder()).orElse(null),
+                    // Ejecuta la operacion detalleVencimiento.
                     null, detalleVencimiento(facturas)));
         }
 
@@ -160,6 +169,7 @@ public class SeguimientoService {
         return new PasoSeguimientoDTO(c.tituloEspera(), c.detalleEspera(), c.responsable(), null, EstadoPaso.ACTUAL);
     }
 
+    // Ejecuta la operacion detalleFacturas.
     private String detalleFacturas(List<Factura> facturas) {
         if (facturas.isEmpty()) return null;
         if (facturas.size() == 1) {

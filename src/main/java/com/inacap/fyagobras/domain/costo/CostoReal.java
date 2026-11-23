@@ -12,6 +12,7 @@ import java.math.RoundingMode;
 @Table(name = "costos_reales")
 @Getter
 @NoArgsConstructor
+// Clase CostoReal: implementa la funcionalidad del dominio.
 public class CostoReal {
 
     @Id
@@ -31,11 +32,13 @@ public class CostoReal {
     @Column(name = "valor_hora", nullable = false)
     private BigDecimal valorHora;
 
+    // Ejecuta la operacion CostoReal.
     public CostoReal(Obra obra, BigDecimal materiales, BigDecimal horasTecnicas, BigDecimal valorHora) {
         this.obra = obra;
         actualizar(materiales, horasTecnicas, valorHora);
     }
 
+    // Ejecuta la operacion actualizar.
     public void actualizar(BigDecimal materiales, BigDecimal horasTecnicas, BigDecimal valorHora) {
         // Reemplaza los tres componentes que forman el costo real.
         this.materiales = materiales;
@@ -43,11 +46,13 @@ public class CostoReal {
         this.valorHora = valorHora;
     }
 
+    // Ejecuta la operacion costoManoObra.
     public BigDecimal costoManoObra() {
         // Calcula las horas trabajadas por el valor de cada hora.
         return horasTecnicas.multiply(valorHora).setScale(2, RoundingMode.HALF_UP);
     }
 
+    // Ejecuta la operacion costoTotal.
     public BigDecimal costoTotal() {
         // Suma materiales y mano de obra para obtener el costo final.
         return materiales.add(costoManoObra());

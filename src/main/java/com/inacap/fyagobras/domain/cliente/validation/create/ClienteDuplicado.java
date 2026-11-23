@@ -7,12 +7,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
+// Validador ClienteDuplicado: aplica una regla del dominio.
 public class ClienteDuplicado implements ValidarCrearCliente {
 
     @Autowired
     private ClienteRepository repository;
 
     @Override
+    // Ejecuta la operacion validate.
     public void validate(RegistrarClienteDTO data) {
         if (repository.findByRut(data.rut().toUpperCase()).isPresent()) {
             throw new ConflictoNegocioException("Ya existe un cliente con este RUT.");

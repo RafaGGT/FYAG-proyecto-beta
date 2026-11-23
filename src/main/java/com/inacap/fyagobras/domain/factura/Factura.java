@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Table(name = "facturas")
 @Getter
 @NoArgsConstructor
+// Clase Factura: implementa la funcionalidad del dominio.
 public class Factura {
 
     @Id
@@ -54,6 +55,7 @@ public class Factura {
     @Column(name = "fecha_anulacion")
     private LocalDateTime fechaAnulacion;
 
+    // Ejecuta la operacion Factura.
     public Factura(String numeroFactura, Obra obra, LocalDate fechaEmision,
                    LocalDate fechaVencimiento, BigDecimal monto) {
         this.numeroFactura = numeroFactura;

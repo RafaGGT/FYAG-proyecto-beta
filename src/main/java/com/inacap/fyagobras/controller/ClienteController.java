@@ -19,6 +19,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 // Define la clase como un controlador REST y mapea la ruta base "/clientes"
 @RestController
 @RequestMapping("/clientes")
+// Este controlador administra el alta y consulta de clientes.
+// Traduce peticiones HTTP en llamadas al ClienteService y devuelve resultados mediante ResponseEntity.
 public class ClienteController {
 
     // Inyecta el servicio que contiene la lógica de negocio para la gestión de clientes
@@ -34,10 +36,13 @@ public class ClienteController {
             @RequestBody @Valid RegistrarClienteDTO datos,
             @AuthenticationPrincipal Usuario actor,
             UriComponentsBuilder uriComponentsBuilder) {
+        // @RequestBody recibe los datos JSON y @Valid activa las validaciones del DTO.
+        // actor identifica al usuario FINANZAS que realiza el registro.
         var creado = clienteService.registrar(datos, actor);
         // Construye la URI del recurso recién creado (/clientes/{id})
         var uri = uriComponentsBuilder.path("/clientes/{id}").buildAndExpand(creado.id()).toUri();
-        // Retorna una respuesta 201 Created con la URI y el cuerpo con los detalles del cliente
+        // 201 Created indica creación exitosa.
+        // La cabecera Ubicación contiene la dirección del nuevo recurso y body entrega sus datos.
         return ResponseEntity.created(uri).body(creado);
     }
 
@@ -62,6 +67,8 @@ public class ClienteController {
     // Define un endpoint GET para consultar los detalles de un cliente específico por su ID
     @GetMapping("/{id}")
     public ResponseEntity<DetallesClienteDTO> detalle(@PathVariable Long id) {
+        // @PathVariable toma el ID desde la URL.
+        // 200 OK entrega el cliente encontrado dentro del cuerpo JSON.
         // Busca el cliente solicitado por su identificador.
         var cliente = clienteService.obtener(id);
         // Retorna los detalles del cliente obtenido con estado 200 OK
@@ -82,3 +89,9 @@ public class ClienteController {
         return ResponseEntity.ok(cliente);
     }
 }
+        // busqueda es opcional: si existe filtra por RUT o razón social.
+        // Pageable define tamaño y orden; PagedModel incluye datos y metadatos de paginación.
+        // 200 OK indica que la consulta fue exitosa.
+            // @RequestBody contiene únicamente los datos de contacto permitidos.
+            // @Valid verifica el formato antes de llamar al servicio.
+            // 200 OK indica modificación exitosa y devuelve el cliente actualizado.

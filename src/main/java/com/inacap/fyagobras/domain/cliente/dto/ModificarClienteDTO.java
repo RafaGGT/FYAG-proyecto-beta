@@ -3,6 +3,7 @@ package com.inacap.fyagobras.domain.cliente.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 
+// DTO ModificarClienteDTO: transporta datos entre el dominio y la API.
 public record ModificarClienteDTO(
         @Size(min = 1, max = 150, message = "La razón social debe tener entre 1 y 150 caracteres")
         String razonSocial,

@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+// DTO EmitirFacturaDTO: transporta datos entre el dominio y la API.
 public record EmitirFacturaDTO(
         @NotNull(message = "Debe seleccionar una obra")
         Long obraId,

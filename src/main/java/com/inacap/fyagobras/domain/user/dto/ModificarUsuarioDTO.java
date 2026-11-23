@@ -4,6 +4,7 @@ package com.inacap.fyagobras.domain.user.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 
+// DTO ModificarUsuarioDTO: transporta datos entre el dominio y la API.
 public record ModificarUsuarioDTO(
 
         @Size(max = 40, message = "El nombre no debe exceder 40 caracteres")

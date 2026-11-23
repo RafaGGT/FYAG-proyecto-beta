@@ -11,8 +11,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/dashboard")
+// Este controlador entrega en una sola respuesta los indicadores principales de gestión.
+// El resultado se obtiene mediante JSON dentro de un ResponseEntity con estado 200 OK.
 public class DashboardController {
 
+    // Servicio que calcula ventas, cobranzas, obras y otros indicadores.
     @Autowired
     private DashboardService dashboardService;
 
