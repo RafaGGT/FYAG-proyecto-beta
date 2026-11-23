@@ -5,12 +5,14 @@ import com.inacap.fyagobras.domain.user.Role;
 
 import java.math.BigDecimal;
 
+// DTO DetallesCostosDTO: transporta datos entre el dominio y la API.
 public record DetallesCostosDTO(
         Long obraId,
         BigDecimal materiales,
         BigDecimal horasTecnicas,
         BigDecimal valorHora
 ) {
+    // Ejecuta la operacion DetallesCostosDTO.
     public DetallesCostosDTO(CostoReal c) {
         this(c.getObra().getId(), c.getMateriales(), c.getHorasTecnicas(), c.getValorHora());
     }

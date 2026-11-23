@@ -22,12 +22,14 @@ import java.time.LocalDate;
 import java.util.Locale;
 
 @Component
+// Clase ReportePdfGenerador: implementa la funcionalidad del dominio.
 public class ReportePdfGenerador {
 
     private static final Font TITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16);
     private static final Font NEGRITA = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9);
     private static final Font NORMAL = FontFactory.getFont(FontFactory.HELVETICA, 9);
 
+    // Ejecuta la operacion generar.
     public byte[] generar(ReporteDatos datos) {
         var moneda = NumberFormat.getCurrencyInstance(new Locale("es", "CL"));
 
@@ -83,6 +85,7 @@ public class ReportePdfGenerador {
         }
     }
 
+    // Ejecuta la operacion agregarLogo.
     private void agregarLogo(Document documento) throws Exception {
         var recurso = new ClassPathResource("static/logo-fyag.png");
         if (recurso.exists()) {
@@ -93,6 +96,7 @@ public class ReportePdfGenerador {
         }
     }
 
+    // Ejecuta la operacion celda.
     private PdfPCell celda(String texto, Font fuente, int alineacion) {
         var c = new PdfPCell(new Phrase(texto, fuente));
         c.setHorizontalAlignment(alineacion);

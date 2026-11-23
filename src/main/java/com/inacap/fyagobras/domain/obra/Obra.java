@@ -13,6 +13,7 @@ import java.time.LocalDate;
 @Table(name = "obras")
 @Getter
 @NoArgsConstructor
+// Clase Obra: implementa la funcionalidad del dominio.
 public class Obra {
 
     @Id
@@ -50,6 +51,7 @@ public class Obra {
     @JoinColumn(name = "tecnico_id")
     private Usuario tecnico;
 
+    // Ejecuta la operacion Obra.
     public Obra(String nombre, String descripcion, LocalDate fechaInicio,
                 Presupuesto presupuesto, TipoServicio tipoServicio, Usuario tecnico) {
         // Inicializa la obra con sus relaciones y estado de trabajo inicial.
@@ -62,6 +64,7 @@ public class Obra {
         this.estado = EstadoObra.EN_PROCESO;
     }
 
+    // Ejecuta la operacion cambiarEstado.
     public void cambiarEstado(EstadoObra destino, String motivo) {
         // Guarda el motivo únicamente cuando la obra queda suspendida.
         if (destino == EstadoObra.SUSPENDIDA) {
@@ -75,6 +78,7 @@ public class Obra {
         this.estado = destino;
     }
 
+    // Ejecuta la operacion asignarTecnico.
     public void asignarTecnico(Usuario tecnico) {
         // Cambia el técnico responsable de la obra.
         this.tecnico = tecnico;

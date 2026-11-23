@@ -4,6 +4,7 @@ import com.inacap.fyagobras.domain.user.Role;
 import jakarta.validation.constraints.*;
 
 
+// DTO RegistrarUsuarioDTO: transporta datos entre el dominio y la API.
 public record RegistrarUsuarioDTO(
         @NotBlank(message = "El nombre es obligatorio")
         @Size(max = 40, message = "El nombre no debe exceder 40 caracteres")

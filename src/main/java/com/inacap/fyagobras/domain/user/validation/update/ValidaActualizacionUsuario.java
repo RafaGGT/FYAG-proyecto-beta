@@ -7,12 +7,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
+// Validador ValidaActualizacionUsuario: aplica una regla del dominio.
 public class ValidaActualizacionUsuario implements ValidarActualizarUsuario {
 
     @Autowired
     private UsuarioRepository repository;
 
     @Override
+    // Ejecuta la operacion validate.
     public void validate(String username, ModificarUsuarioDTO data) {
         if (data.email() != null) {
             repository.findByEmail(data.email()).ifPresent(u -> {

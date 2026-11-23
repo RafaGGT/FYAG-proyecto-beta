@@ -11,6 +11,7 @@ import java.time.Instant;
 @Table(name = "notificaciones")
 @Getter
 @NoArgsConstructor
+// Clase Notificacion: implementa la funcionalidad del dominio.
 public class Notificacion {
 
     @Id
@@ -39,6 +40,7 @@ public class Notificacion {
     @Column(name = "fecha_creacion", nullable = false)
     private Instant fechaCreacion = Instant.now();
 
+    // Ejecuta la operacion Notificacion.
     public Notificacion(Long destinatarioId, Long obraId, TipoNotificacion tipo, String mensaje, String tono) {
         this.destinatarioId = destinatarioId;
         this.obraId = obraId;
@@ -47,6 +49,7 @@ public class Notificacion {
         this.tono = tono;
     }
 
+    // Ejecuta la operacion marcarLeida.
     public void marcarLeida() {
         this.leida = true;
     }

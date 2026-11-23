@@ -15,8 +15,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/tipos-servicio")
+// Este controlador administra los tipos de servicio disponibles para obras.
+// Permite crear, modificar, listar y activar o desactivar servicios sin eliminarlos físicamente.
 public class TipoServicioController {
 
+    // Servicio que valida y mantiene activos o inactivos los tipos de servicio.
     @Autowired
     private TipoServicioService tipoServicioService;
 
@@ -26,6 +29,8 @@ public class TipoServicioController {
     public ResponseEntity<List<DetallesTipoServicioDTO>> listar(
             @RequestParam(defaultValue = "false") boolean incluirInactivos) {
 
+        // false lista solo servicios vigentes; true solicita incluir los desactivados.
+        // 200 OK entrega una lista, aunque esta pueda estar vacía.
         // Consulta los tipos de servicio según el filtro de vigencia.
         var tipos = tipoServicioService.listar(incluirInactivos);
         // Devuelve la lista para el cliente solicitante.
@@ -39,11 +44,13 @@ public class TipoServicioController {
             @RequestBody @Valid RegistrarTipoServicioDTO datos,
             @AuthenticationPrincipal Usuario actor, UriComponentsBuilder uriComponentsBuilder) {
 
+        // @Valid valida los datos antes de llamar al servicio.
+        // UriComponentsBuilder crea una dirección HTTP apuntando al nuevo recurso.
         // Registra el nuevo tipo de servicio.
         var creado = tipoServicioService.registrar(datos, actor);
         // Construye la URI del tipo de servicio creado.
         var uri = uriComponentsBuilder.path("/tipos-servicio/{id}").buildAndExpand(creado.id()).toUri();
-        // Responde con estado 201 y el recurso creado.
+        // 201 Created indica que se creó el recurso y Ubicación señala su URI.
         return ResponseEntity.created(uri).body(creado);
     }
 
@@ -51,6 +58,7 @@ public class TipoServicioController {
     @PreAuthorize("hasRole('SUPERVISOR')")
     @PutMapping("/{id}")
     public ResponseEntity<DetallesTipoServicioDTO> modificar(
+            // 200 OK entrega el tipo actualizado dentro del cuerpo JSON.
             @PathVariable Long id,
             @RequestBody @Valid ModificarTipoServicioDTO datos, @AuthenticationPrincipal Usuario actor) {
 
@@ -73,3 +81,4 @@ public class TipoServicioController {
         return ResponseEntity.ok(tipo);
     }
 }
+            // 200 OK indica que el cambio de vigencia fue aplicado.

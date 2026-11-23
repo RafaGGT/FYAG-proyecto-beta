@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+// DTO RegistrarClienteDTO: transporta datos entre el dominio y la API.
 public record RegistrarClienteDTO(
         @NotBlank(message = "El RUT es obligatorio")
         @Pattern(regexp = "^\\d{7,8}-[\\dkK]$", message = "Formato de RUT inválido (ej: 12345678-5)")

@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
+// DTO ItemPresupuestoDTO: transporta datos entre el dominio y la API.
 public record ItemPresupuestoDTO(
         @NotBlank(message = "La descripción del ítem es obligatoria")
         @Size(max = 300, message = "La descripción no debe exceder 300 caracteres")

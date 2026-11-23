@@ -25,6 +25,8 @@ import java.util.List;
 // Define la clase como un controlador REST y mapea la ruta base "/presupuestos"
 @RestController
 @RequestMapping("/presupuestos")
+// Este controlador recibe solicitudes para crear, listar, modificar y aprobar presupuestos.
+// Los métodos usan ResponseEntity para entregar JSON o archivos PDF según la operación.
 public class PresupuestoController {
 
     // Inyecta el servicio que contiene la lógica de negocio para los presupuestos
@@ -42,11 +44,13 @@ public class PresupuestoController {
             @RequestBody @Valid RegistrarPresupuestoDTO datos,
             UriComponentsBuilder uriComponentsBuilder) {
 
+        // @Valid revisa primero cliente e ítems antes de llamar al dominio.
+        // UriComponentsBuilder construye la URL del nuevo presupuesto.
         // Registra el presupuesto con los datos validados.
         var creado = presupuestoService.registrar(datos);
         // Construye la URI del presupuesto creado.
         var uri = uriComponentsBuilder.path("/presupuestos/{id}").buildAndExpand(creado.id()).toUri();
-        // Responde con estado 201 y el detalle del presupuesto.
+        // 201 Created indica creación y el cuerpo incluye el presupuesto registrado.
         return ResponseEntity.created(uri).body(creado);
     }
 
@@ -67,6 +71,7 @@ public class PresupuestoController {
     @PreAuthorize("hasRole('SUPERVISOR')")
     @GetMapping("/aprobados")
     public ResponseEntity<List<ResumenPresupuestoDTO>> aprobados() {
+        // 200 OK devuelve una lista y puede estar vacía si no existen presupuestos disponibles.
         // Obtiene los presupuestos aprobados disponibles para crear obras.
         var presupuestos = presupuestoService.aprobados();
         // Devuelve la lista sin exponer montos.
@@ -77,6 +82,8 @@ public class PresupuestoController {
     @PreAuthorize("hasAnyRole('FINANZAS','GERENCIA')")
     @GetMapping("/{id}")
     public ResponseEntity<DetallesPresupuestoDTO> detalle(@PathVariable Long id) {
+        // @PathVariable obtiene el ID desde la URL.
+        // 200 OK entrega los datos completos; una inexistencia se transforma en el error global correspondiente.
         // Busca el presupuesto solicitado por su identificador.
         var presupuesto = presupuestoService.obtener(id);
         // Devuelve el detalle con sus ítems y montos.
@@ -127,6 +134,8 @@ public class PresupuestoController {
     @PreAuthorize("hasAnyRole('FINANZAS','GERENCIA')")
     @GetMapping("/{id}/pdf")
     public ResponseEntity<byte[]> pdf(@PathVariable Long id) {
+        // Este método no devuelve JSON: devuelve bytes con MIME application/pdf.
+        // Content-Disposition attachment le indica al navegador que descargue el archivo.
         // Genera el PDF institucional del presupuesto.
         var contenido = presupuestoPdfService.generar(id);
         // Configura la descarga con un nombre y tipo de contenido adecuados.
@@ -139,3 +148,12 @@ public class PresupuestoController {
 
 
 }
+        // estado permite filtrar PENDIENTE, APROBADO o RECHAZADO.
+        // Pageable controla cantidad y orden; PagedModel entrega metadatos de paginación.
+        // 200 OK indica que la consulta fue exitosa.
+        // @Valid verifica los nuevos ítems antes de modificar el presupuesto.
+        // 200 OK devuelve el presupuesto recalculado.
+        // actor permite comprobar autorización y registrar quién aprobó.
+        // 200 OK entrega el presupuesto con estado APROBADO.
+        // El cuerpo debe incluir el motivo; @Valid evita rechazos sin explicación.
+        // 200 OK entrega el presupuesto con estado RECHAZADO.

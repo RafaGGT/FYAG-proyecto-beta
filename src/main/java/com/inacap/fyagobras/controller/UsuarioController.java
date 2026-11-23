@@ -19,6 +19,8 @@ import java.util.List;
 // Define la clase como un controlador REST y mapea la ruta base "/usuarios"
 @RestController
 @RequestMapping("/usuarios")
+// Este controlador administra usuarios, perfiles, contraseñas, roles y estados.
+// Cada ResponseEntity describe el resultado HTTP que recibirá el cliente web o móvil.
 public class UsuarioController {
 
     // Inyecta el servicio que contiene la lógica de negocio relacionada con los usuarios
@@ -41,13 +43,16 @@ public class UsuarioController {
             @AuthenticationPrincipal Usuario actor,
             UriComponentsBuilder uriComponentsBuilder) {
 
+        // @RequestBody recibe el JSON y @Valid comprueba sus reglas antes de continuar.
+        // actor representa al administrador que crea la cuenta y UriComponentsBuilder construye su URL.
         // Llama al servicio para registrar el usuario (con el actor para auditar) y obtiene sus detalles
         var creado = usuarioService.registrar(datos, actor);
         // Construye la URI absoluta para acceder al recurso creado (/usuarios/{username})
         var uri = uriComponentsBuilder.path("/usuarios/{username}")
                 .buildAndExpand(creado.username())
                 .toUri();
-        // Retorna una respuesta 201 Created con la URI y el cuerpo con los detalles del usuario
+        // 201 Created indica que la cuenta fue creada.
+        // Ubicación apunta al usuario y body contiene sus datos públicos.
         return ResponseEntity.created(uri).body(creado);
     }
     /**
@@ -58,6 +63,8 @@ public class UsuarioController {
     // Define un endpoint GET en "/usuarios/me" para obtener el perfil del usuario actual
     @GetMapping("/me")
     public ResponseEntity<DetallesUsuarioDTO> perfil(@AuthenticationPrincipal Usuario actual) {
+        // No se recibe un usuario desde la URL: se toma directamente del token autenticado.
+        // 200 OK entrega el perfil dentro de un objeto DetallesUsuarioDTO convertido a JSON.
         // Retorna los detalles mapeados del usuario autenticado actual con un estado 200 OK
         return ResponseEntity.ok(new DetallesUsuarioDTO(actual));
     }
@@ -110,6 +117,8 @@ public class UsuarioController {
     // Define un endpoint GET en "/usuarios/tecnicos" para obtener una lista simplificada de técnicos
     @GetMapping("/tecnicos")
     public ResponseEntity<List<TecnicoDTO>> tecnicos() {
+        // Esta operación devuelve una lista simplificada con ID, nombre y apellido.
+        // 200 OK indica consulta exitosa; una lista vacía también es válida.
         // Obtiene la lista de técnicos del servicio y los mapea a TecnicoDTO
         var lista = usuarioService.listarTecnicos().stream()
                 .map(u -> new TecnicoDTO(u.getId(), u.getNombre(), u.getApellido()))
@@ -128,6 +137,8 @@ public class UsuarioController {
     // Define un endpoint GET para buscar un usuario por su username en la ruta
     @GetMapping("/{username}")
     public ResponseEntity<DetallesUsuarioDTO> obtenerPorUsername(@PathVariable String username) {
+        // @PathVariable extrae el username desde la URL.
+        // 200 OK devuelve los detalles si el usuario existe y el permiso fue aprobado.
         // Busca el usuario mediante el nombre de usuario recibido.
         var usuario = usuarioService.obtenerPorUsername(username);
         // Retorna los detalles del usuario encontrado con un estado 200 OK
@@ -236,3 +247,20 @@ public class UsuarioController {
         return ResponseEntity.ok(new DetallesUsuarioDTO(usuario));
     }
 }
+            // actual viene del token y datos contiene la contraseña actual y la nueva.
+            // Void significa que el cuerpo de la respuesta estará vacío.
+            // 204 No Content confirma el cambio sin enviar datos adicionales.
+            // role y activo son filtros opcionales recibidos como parámetros de consulta.
+            // Pageable controla página y orden; PagedModel convierte el resultado en una respuesta paginada.
+            // 200 OK devuelve la página de usuarios encontrados.
+            // El cuerpo contiene el nuevo rol y actor registra quién hizo el cambio.
+            // 200 OK entrega la cuenta ya modificada.
+            // El nombre de usuario debe coincidir con la identidad autenticada por la regla @PreAuthorize.
+            // 200 OK devuelve los datos personales ya actualizados.
+            // El cuerpo indica si la cuenta quedará activa o inactiva.
+            // actor permite registrar esta acción administrativa.
+            // 200 OK devuelve el usuario y su nuevo estado.
+            // El servicio genera una contraseña temporal y la devuelve una sola vez.
+            // 200 OK entrega las credenciales temporales al administrador autenticado.
+            // actor registra quién levantó el bloqueo.
+            // 200 OK devuelve el usuario ya habilitado nuevamente.

@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 
+// DTO RegistrarPresupuestoDTO: transporta datos entre el dominio y la API.
 public record RegistrarPresupuestoDTO(
         @NotNull(message = "El cliente es obligatorio")
         Long clienteId,

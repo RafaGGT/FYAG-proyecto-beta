@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 @Table(name = "items_presupuesto")
 @Getter
 @NoArgsConstructor
+// Clase ItemPresupuesto: implementa la funcionalidad del dominio.
 public class ItemPresupuesto {
 
     @Id
@@ -27,6 +28,7 @@ public class ItemPresupuesto {
     @Column(nullable = false)
     private BigDecimal monto;
 
+    // Ejecuta la operacion ItemPresupuesto.
     public ItemPresupuesto(Presupuesto presupuesto, String descripcion, BigDecimal monto) {
         this.presupuesto = presupuesto;
         this.descripcion = descripcion;

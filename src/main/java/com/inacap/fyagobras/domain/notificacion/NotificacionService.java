@@ -18,6 +18,7 @@ import java.util.Collection;
  * si el cambio de negocio se revierte, el aviso tampoco queda guardado.
  */
 @Service
+// Clase NotificacionService: implementa la funcionalidad del dominio.
 public class NotificacionService {
 
     private static final int MAX_RESUMEN = 30;
@@ -28,6 +29,7 @@ public class NotificacionService {
 
     /** Avisa a un usuario. Si el destinatario es null (obra sin técnico, por ejemplo) no hace nada. */
     @Transactional
+    // Ejecuta la operacion notificar.
     public void notificar(Usuario destinatario, TipoNotificacion tipo, String mensaje, Long obraId, String tono) {
         if (destinatario == null) return;
         repository.save(new Notificacion(destinatario.getId(), obraId, tipo, recortar(mensaje), tono));
@@ -35,6 +37,7 @@ public class NotificacionService {
 
     /** Avisa a todos los usuarios activos de esos perfiles, menos a quien ejecutó la acción. */
     @Transactional
+    // Ejecuta la operacion notificarRoles.
     public void notificarRoles(Collection<Role> roles, TipoNotificacion tipo, String mensaje,
                                Long obraId, String tono, Usuario excluir) {
         for (var rol : roles) {
@@ -45,6 +48,7 @@ public class NotificacionService {
     }
 
     @Transactional(readOnly = true)
+    // Ejecuta la operacion resumen.
     public ResumenNotificacionesDTO resumen(Usuario actor) {
         var items = repository
                 .findByDestinatarioIdOrderByFechaCreacionDesc(actor.getId(), PageRequest.of(0, MAX_RESUMEN))
@@ -53,6 +57,7 @@ public class NotificacionService {
     }
 
     @Transactional
+    // Ejecuta la operacion marcarLeida.
     public void marcarLeida(Long id, Usuario actor) {
         var n = repository.findByIdAndDestinatarioId(id, actor.getId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Notificación no encontrada"));
@@ -60,10 +65,12 @@ public class NotificacionService {
     }
 
     @Transactional
+    // Ejecuta la operacion marcarTodasLeidas.
     public void marcarTodasLeidas(Usuario actor) {
         repository.marcarTodasLeidas(actor.getId());
     }
 
+    // Ejecuta la operacion recortar.
     private static String recortar(String texto) {
         return texto.length() <= MAX_MENSAJE ? texto : texto.substring(0, MAX_MENSAJE - 1) + "…";
     }

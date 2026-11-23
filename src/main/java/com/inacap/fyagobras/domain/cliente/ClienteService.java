@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.List;
 
 @Service
+// Clase ClienteService: implementa la funcionalidad del dominio.
 public class ClienteService {
 
     @Autowired
@@ -29,6 +30,7 @@ public class ClienteService {
     private AuditoriaService auditoriaService;
 
     @Transactional
+    // Ejecuta la operacion registrar.
     public DetallesClienteDTO registrar(RegistrarClienteDTO datos) {
         // Ejecuta todas las validaciones registradas para la creación.
         crearValidador.forEach(v -> v.validate(datos));
@@ -38,11 +40,13 @@ public class ClienteService {
         return new DetallesClienteDTO(guardado);
     }
 
+    // Ejecuta la operacion obtener.
     public DetallesClienteDTO obtener(Long id) {
         // Busca el cliente y transforma la entidad en un DTO de respuesta.
         return new DetallesClienteDTO(buscar(id));
     }
 
+    // Ejecuta la operacion listar.
     public Page<DetallesClienteDTO> listar(String busqueda, Pageable paginacion) {
         // Usa la consulta general cuando no se solicitó un filtro.
         var pagina = (busqueda == null || busqueda.isBlank())
@@ -53,6 +57,7 @@ public class ClienteService {
     }
 
     @Transactional
+    // Ejecuta la operacion actualizar.
     public DetallesClienteDTO actualizar(Long id, ModificarClienteDTO datos) {
         // Obtiene el cliente antes de modificarlo.
         var cliente = buscar(id);
@@ -62,6 +67,7 @@ public class ClienteService {
         return new DetallesClienteDTO(cliente);
     }
 
+    // Ejecuta la operacion buscar.
     private Cliente buscar(Long id) {
         // Consulta el repositorio y comunica explícitamente si no existe.
         return clienteRepository.findById(id)
@@ -69,6 +75,7 @@ public class ClienteService {
     }
 
     @Transactional
+    // Ejecuta la operacion registrar.
     public DetallesClienteDTO registrar(RegistrarClienteDTO datos, Usuario actor) {
         crearValidador.forEach(v -> v.validate(datos));
         var guardado = clienteRepository.save(new Cliente(datos));
@@ -79,6 +86,7 @@ public class ClienteService {
     }
 
     @Transactional
+    // Ejecuta la operacion actualizar.
     public DetallesClienteDTO actualizar(Long id, ModificarClienteDTO datos, Usuario actor) {
         var cliente = buscar(id);
         // Foto de los datos ANTES de modificar
@@ -95,7 +103,9 @@ public class ClienteService {
 
     // LinkedHashMap en vez de Map.of porque dirección, correo y teléfono pueden ser null
     private Map<String, Object> datosCliente(Cliente c) {
+        // Crea un mapa ordenado con los datos relevantes del cliente para auditoría.
         var datos = new LinkedHashMap<String, Object>();
+        // Agrega cada propiedad del cliente al mapa con su nombre como clave.
         datos.put("rut", c.getRut());
         datos.put("razon_social", c.getRazonSocial());
         datos.put("direccion", c.getDireccion());

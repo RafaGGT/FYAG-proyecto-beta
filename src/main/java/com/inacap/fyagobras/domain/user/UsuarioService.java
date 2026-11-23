@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+// Clase UsuarioService: implementa la funcionalidad del dominio.
 public class UsuarioService {
 
     @Autowired
@@ -40,6 +41,7 @@ public class UsuarioService {
     private long bloqueoMinutos;
 
     @Transactional
+    // Ejecuta la operacion registrar.
     public DetallesUsuarioDTO registrar(RegistrarUsuarioDTO datos, Usuario actor) {
         // Ejecuta las reglas de validación para el nuevo usuario.
         crearValidador.forEach(v -> v.validate(datos));
@@ -55,10 +57,13 @@ public class UsuarioService {
         return new DetallesUsuarioDTO(guardado);
     }
 
+    // Ejecuta la operacion obtenerPorUsername.
     public Usuario obtenerPorUsername(String username) {
+        // Ejecuta la operacion buscar.
         return buscar(username);
     }
 
+    // Ejecuta la operacion listar.
     public Page<Usuario> listar(Role role, Boolean activo, Pageable paginacion) {
         // Elige la consulta específica según los filtros recibidos.
         if (role != null && activo != null) {
@@ -73,12 +78,14 @@ public class UsuarioService {
         return usuarioRepository.findAll(paginacion);
     }
 
+    // Ejecuta la operacion listarTecnicos.
     public List<Usuario> listarTecnicos() {
         // Devuelve solo técnicos activos ordenados por apellido.
         return usuarioRepository.findByRoleAndActivoTrueOrderByApellidoAsc(Role.TECNICO);
     }
 
     @Transactional
+    // Ejecuta la operacion administrarCuenta.
     public Usuario administrarCuenta(String username, ModificarRolDTO datos, Usuario actor) {
         // Busca la cuenta que se desea administrar.
         var usuario = buscar(username);
@@ -102,6 +109,7 @@ public class UsuarioService {
     }
 
     @Transactional
+    // Ejecuta la operacion actualizarDatos.
     public Usuario actualizarDatos(String username, ModificarUsuarioDTO datos) {
         // Valida los datos antes de modificar la cuenta.
         actualizarValidador.forEach(v -> v.validate(username, datos));
@@ -115,6 +123,7 @@ public class UsuarioService {
 
 
     @Transactional
+    // Ejecuta la operacion cambiarEstado.
     public Usuario cambiarEstado(String username, UsuarioActivoDTO datos, Usuario actor) {
         // Obtiene el usuario que se quiere activar o desactivar.
         var usuario = buscar(username);
@@ -139,6 +148,7 @@ public class UsuarioService {
     // --- contraseña y bloqueo ---
 
     @Transactional
+    // Ejecuta la operacion cambiarPassword.
     public void cambiarPassword(String username, CambiarPasswordDTO datos) {
         // Busca la cuenta que solicita el cambio.
         var usuario = buscar(username);
@@ -160,6 +170,7 @@ public class UsuarioService {
     }
 
     @Transactional
+    // Ejecuta la operacion resetearPassword.
     public CredencialesTemporalesDTO resetearPassword(String username, Usuario actor) {
         // Recupera la cuenta a la que se asignará una contraseña temporal.
         var usuario = buscar(username);
@@ -181,6 +192,7 @@ public class UsuarioService {
     }
 
     @Transactional
+    // Ejecuta la operacion desbloquear.
     public Usuario desbloquear(String username, Usuario actor) {
         // Busca la cuenta y elimina su bloqueo de acceso.
         var usuario = buscar(username);
@@ -194,6 +206,7 @@ public class UsuarioService {
     // --- auditoría de intentos de ingreso ---
 
     @Transactional
+    // Ejecuta la operacion registrarFalloLogin.
     public void registrarFalloLogin(String username) {
         // Si la cuenta existe, acumula el intento fallido y aplica el bloqueo configurado.
         usuarioRepository.findByUsername(username).ifPresent(u -> {
@@ -208,6 +221,7 @@ public class UsuarioService {
     }
 
     @Transactional
+    // Ejecuta la operacion registrarExitoLogin.
     public void registrarExitoLogin(String username) {
         // Un inicio de sesión exitoso limpia los contadores de bloqueo.
         usuarioRepository.findByUsername(username).ifPresent(u -> {
@@ -220,12 +234,14 @@ public class UsuarioService {
     }
 
     @Transactional
+    // Ejecuta la operacion registrarIntentoRechazado.
     public void registrarIntentoRechazado(String username, String accion) {
         // Intentos rechazados porque la cuenta está bloqueada o desactivada.
         usuarioRepository.findByUsername(username).ifPresent(u ->
                 auditoriaService.registrar(u, "usuarios", u.getId(), accion, null, null, null));
     }
 
+    // Ejecuta la operacion buscar.
     private Usuario buscar(String username) {
         // Centraliza la consulta de usuarios y el error cuando no existe.
         return usuarioRepository.findByUsername(username)

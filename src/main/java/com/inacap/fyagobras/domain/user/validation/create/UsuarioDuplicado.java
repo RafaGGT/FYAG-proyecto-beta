@@ -7,11 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
+// Validador UsuarioDuplicado: aplica una regla del dominio.
 public class UsuarioDuplicado implements ValidarCrearUsuario {
     @Autowired
     private UsuarioRepository repository;
 
     @Override
+    // Ejecuta la operacion validate.
     public void validate(RegistrarUsuarioDTO data) {
         if (repository.findByUsername(data.username()).isPresent()) {
             throw new ConflictoNegocioException("Este usuario ya existe.");

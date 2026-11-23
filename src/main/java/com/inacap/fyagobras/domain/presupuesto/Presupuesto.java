@@ -16,6 +16,7 @@ import com.inacap.fyagobras.infra.exception.ConflictoNegocioException;
 @Table(name = "presupuestos")
 @Getter
 @NoArgsConstructor
+// Clase Presupuesto: implementa la funcionalidad del dominio.
 public class Presupuesto {
 
     @Id
@@ -57,6 +58,7 @@ public class Presupuesto {
         reemplazarItems(items);
     }
 
+    // Ejecuta la operacion estaPendiente.
     public boolean estaPendiente() {
         // Indica si el presupuesto todavía puede ser editado o resuelto.
         return estado == EstadoPresupuesto.PENDIENTE;
@@ -90,6 +92,7 @@ public class Presupuesto {
         this.motivoRechazo = null;
     }
 
+    // Ejecuta la operacion rechazar.
     public void rechazar(String motivo) {
         // Marca el presupuesto como rechazado y conserva el motivo.
         this.estado = EstadoPresupuesto.RECHAZADO;

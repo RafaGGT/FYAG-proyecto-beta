@@ -24,8 +24,11 @@ import com.inacap.fyagobras.domain.notificacion.TipoNotificacion;
 import java.util.List;
 @RestController
 @RequestMapping("/obras")
+// Este controlador recibe solicitudes relacionadas con la creación y el ciclo de vida de las obras.
+// Los métodos hacen poco trabajo directo: validan entrada y delegan las reglas complejas al ObraService.
 public class ObraController {
 
+    // Servicios utilizados para gestionar obras, facturas y notificaciones.
     @Autowired
     private ObraService obraService;
     @Autowired
@@ -41,11 +44,13 @@ public class ObraController {
             @AuthenticationPrincipal Usuario actor,
             UriComponentsBuilder uriComponentsBuilder) {
 
+        // @RequestBody convierte el JSON en RegistrarObraDTO y @Valid activa sus reglas.
+        // actor registra quién creó la obra y UriComponentsBuilder construye su URL.
         // Registra la obra usando los datos y el usuario autenticado.
         var creada = obraService.registrar(datos, actor);
         // Construye la URI de la obra creada.
         var uri = uriComponentsBuilder.path("/obras/{id}").buildAndExpand(creada.id()).toUri();
-        // Responde con estado 201 y el detalle de la obra.
+        // 201 Created indica que el recurso fue creado y Ubicación apunta a la nueva obra.
         return ResponseEntity.created(uri).body(creada);
     }
 
@@ -104,3 +109,13 @@ public class ObraController {
     }
 
 }
+        // estado es opcional y puede filtrar obras por su fase.
+        // actor permite que un técnico reciba solamente sus obras.
+        // Pageable controla tamaño de página y orden; PagedModel presenta la información paginada.
+        // 200 OK indica que la consulta fue realizada correctamente.
+        // El ID identifica la obra y actor permite verificar si el técnico puede verla.
+        // 200 OK entrega el detalle; los errores de autorización o inexistencia los controla el servicio.
+        // @Valid comprueba el nuevo estado recibido antes de delegar.
+        // 200 OK entrega la obra después de aplicar las reglas de transición.
+        // El cuerpo indica qué técnico debe quedar asignado.
+        // 200 OK entrega la obra con su nuevo técnico responsable.

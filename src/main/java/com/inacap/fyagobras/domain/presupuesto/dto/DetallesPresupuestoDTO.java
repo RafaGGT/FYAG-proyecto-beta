@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+// DTO DetallesPresupuestoDTO: transporta datos entre el dominio y la API.
 public record DetallesPresupuestoDTO(
         Long id,
         String numeroPresupuesto,
@@ -19,6 +20,7 @@ public record DetallesPresupuestoDTO(
         BigDecimal montoTotal,
         List<ItemPresupuestoDTO> items
 ) {
+    // Ejecuta la operacion DetallesPresupuestoDTO.
     public DetallesPresupuestoDTO(Presupuesto p) {
         this(p.getId(), p.getNumeroPresupuesto(), p.getCliente().getId(), p.getCliente().getRazonSocial(),
                 p.getEstado(), p.getFechaCreacion(), p.getFechaAprobacion(), p.getMotivoRechazo(),

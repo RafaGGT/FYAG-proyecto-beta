@@ -24,6 +24,7 @@ import java.text.NumberFormat;
 import java.util.Locale;
 
 @Service
+// Clase PresupuestoPdfService: implementa la funcionalidad del dominio.
 public class PresupuestoPdfService {
 
     private static final Font TITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18);
@@ -35,6 +36,7 @@ public class PresupuestoPdfService {
 
     /** HU-27: documento institucional con el logo de FYAG y los datos del presupuesto aprobado. */
     @Transactional(readOnly = true)
+    // Ejecuta la operacion generar.
     public byte[] generar(Long id) {
         var presupuesto = repository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Presupuesto no encontrado"));
@@ -80,6 +82,7 @@ public class PresupuestoPdfService {
         }
     }
 
+    // Ejecuta la operacion agregarLogo.
     private void agregarLogo(Document documento) throws Exception {
         var recurso = new ClassPathResource("static/logo-fyag.png");
         if (recurso.exists()) {
@@ -90,6 +93,7 @@ public class PresupuestoPdfService {
         }
     }
 
+    // Ejecuta la operacion linea.
     private Paragraph linea(String etiqueta, String valor) {
         var p = new Paragraph();
         p.add(new Phrase(etiqueta, NEGRITA));
@@ -97,6 +101,7 @@ public class PresupuestoPdfService {
         return p;
     }
 
+    // Ejecuta la operacion celda.
     private PdfPCell celda(String texto, Font fuente, int alineacion) {
         var c = new PdfPCell(new Phrase(texto, fuente));
         c.setHorizontalAlignment(alineacion);

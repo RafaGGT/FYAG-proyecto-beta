@@ -13,13 +13,18 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+// Repositorio FacturaRepository: define el acceso a datos.
 public interface FacturaRepository extends JpaRepository<Factura, Long>, JpaSpecificationExecutor<Factura> {
 
+    // Ejecuta la operacion existsByNumeroFacturaIgnoreCase.
     boolean existsByNumeroFacturaIgnoreCase(String numeroFactura);
 
+    // Ejecuta la operacion findByEstadoPago.
     Page<Factura> findByEstadoPago(EstadoPago estadoPago, Pageable pageable);
+    // Ejecuta la operacion existsByObraIdAndEstadoPago.
     boolean existsByObraIdAndEstadoPago(Long obraId, EstadoPago estadoPago);
 
+    // Ejecuta la operacion findByObraIdAndAnuladaFalseOrderByIdAsc.
     List<Factura> findByObraIdAndAnuladaFalseOrderByIdAsc(Long obraId);
 
     @Query("""
@@ -38,12 +43,14 @@ public interface FacturaRepository extends JpaRepository<Factura, Long>, JpaSpec
             group by c.id, c.rut, c.razonSocial
             order by min(f.fechaVencimiento) asc
             """)
+    // Ejecuta la operacion clientesConPagosPendientes.
     List<ClientePendienteProyeccion> clientesConPagosPendientes(@Param("busqueda") String busqueda);
 
     @Query("""
             select coalesce(sum(f.monto), 0) from Factura f
             where f.anulada = false and f.fechaEmision between :desde and :hasta
             """)
+    // Ejecuta la operacion sumaEmitidaEntre.
     BigDecimal sumaEmitidaEntre(@Param("desde") LocalDate desde, @Param("hasta") LocalDate hasta);
 
     @Query("""
@@ -51,14 +58,17 @@ public interface FacturaRepository extends JpaRepository<Factura, Long>, JpaSpec
             where f.anulada = false
               and f.estadoPago = com.inacap.fyagobras.domain.factura.EstadoPago.PENDIENTE
             """)
+    // Ejecuta la operacion sumaPorCobrar.
     BigDecimal sumaPorCobrar();
 
     @Query(value = "select nextval('factura_numero_seq')", nativeQuery = true)
+    // Ejecuta la operacion siguienteNumero.
     Long siguienteNumero();
 
     @Query("""
             select coalesce(sum(f.monto), 0) from Factura f
             where f.obra.id = :obraId and f.anulada = false
             """)
+    // Ejecuta la operacion totalFacturadoObra.
     BigDecimal totalFacturadoObra(@Param("obraId") Long obraId);
 }

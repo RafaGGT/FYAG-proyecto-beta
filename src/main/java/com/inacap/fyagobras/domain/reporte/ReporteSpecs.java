@@ -13,9 +13,11 @@ import java.util.ArrayList;
 /** Filtros opcionales: solo se aplican los que el usuario eligió (HU-19). */
 public final class ReporteSpecs {
 
+    // Ejecuta la operacion ReporteSpecs.
     private ReporteSpecs() {
     }
 
+    // Ejecuta la operacion obras.
     public static Specification<Obra> obras(LocalDate desde, LocalDate hasta,
                                             Long clienteId, Long tecnicoId, EstadoObra estado) {
         return (root, query, cb) -> {
@@ -39,6 +41,7 @@ public final class ReporteSpecs {
         };
     }
 
+    // Ejecuta la operacion facturas.
     public static Specification<Factura> facturas(LocalDate desde, LocalDate hasta,
                                                   Long clienteId, EstadoPago estadoPago) {
         return (root, query, cb) -> {

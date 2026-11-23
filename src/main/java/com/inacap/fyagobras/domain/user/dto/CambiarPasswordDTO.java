@@ -3,6 +3,7 @@ package com.inacap.fyagobras.domain.user.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+// DTO CambiarPasswordDTO: transporta datos entre el dominio y la API.
 public record CambiarPasswordDTO(
         @NotBlank(message = "La contraseña actual es obligatoria")
         String passwordActual,

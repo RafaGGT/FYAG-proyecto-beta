@@ -55,59 +55,74 @@ import static org.mockito.Mockito.when;
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Facturación y pago de facturas (HU-13 / HU-14 / RF-04)")
+// Prueba el registro de cobros y los calculos asociados a las facturas.
 class FacturaCobroTest {
 
+    // Identificadores y fechas fijos usados en los escenarios de facturación.
     private static final Long OBRA_ID = 100L;
     private static final Long FACTURA_ID = 500L;
     private static final LocalDate EMISION = LocalDate.of(2026, 11, 1);
     private static final LocalDate VENCIMIENTO = LocalDate.of(2026, 12, 1);
     private static final LocalDate PAGO = LocalDate.of(2026, 11, 10);
 
+    // Repositorios simulados para consultar obras y facturas.
     @Mock private FacturaRepository facturaRepository;
     @Mock private ObraRepository obraRepository;
     @Mock private AuditoriaService auditoriaService;
 
+    // Servicio construido manualmente porque los validadores deben controlarse en la prueba.
     private FacturaService service;
+    // Usuario financiero que ejecuta la emisión o el pago.
     private Usuario actor;
 
     @BeforeEach
     void preparar() {
+        // Prepara el validador que exige una obra finalizada.
         var obraFinalizada = new ObraFinalizada();
         ReflectionTestUtils.setField(obraFinalizada, "repository", obraRepository);
 
+        // Prepara el validador que impide exceder el saldo facturable.
         var montoSaldo = new MontoNoExcedeSaldo();
         ReflectionTestUtils.setField(montoSaldo, "obraRepository", obraRepository);
         ReflectionTestUtils.setField(montoSaldo, "facturaRepository", facturaRepository);
 
+        // Construye el servicio y conecta sus dependencias manualmente.
         service = new FacturaService();
         ReflectionTestUtils.setField(service, "facturaRepository", facturaRepository);
         ReflectionTestUtils.setField(service, "obraRepository", obraRepository);
         ReflectionTestUtils.setField(service, "auditoriaService", auditoriaService);
+        // Usa las reglas reales de emisión y pago dentro de la prueba.
         ReflectionTestUtils.setField(service, "emitirValidador", List.of(obraFinalizada, montoSaldo));
         ReflectionTestUtils.setField(service, "pagoValidador",
                 List.of(new FacturaPendiente(), new FechaPagoValida()));
 
+        // Crea el usuario autenticado con rol FINANZAS.
         actor = new Usuario();
         actor.setId(2L);
         actor.setRole(Role.FINANZAS);
     }
 
     private static Obra obra(EstadoObra estado) {
+        // Construye el cliente asociado al presupuesto.
         var cliente = new Cliente();
         cliente.setId(1L);
         cliente.setRazonSocial("Constructora Andes SpA");
 
+        // Crea y aprueba el presupuesto usado por la obra.
         var presupuesto = new Presupuesto("PRES-000001", cliente,
                 List.of(new ItemPresupuestoDTO("Instalación", new BigDecimal("200000"))));
         ReflectionTestUtils.setField(presupuesto, "id", 10L);
         presupuesto.aprobar();
 
+        // Crea el tipo de servicio y asigna sus identificadores.
         var tipo = new TipoServicio("Instalación eléctrica");
         ReflectionTestUtils.setField(tipo, "id", 3L);
 
+        // Construye la obra y asigna el identificador esperado.
         var obra = new Obra("Instalación bodega", "Obra de prueba",
                 LocalDate.of(2026, 10, 1), presupuesto, tipo, null);
         ReflectionTestUtils.setField(obra, "id", OBRA_ID);
+        // Cambia el estado artificialmente cuando el escenario lo requiere.
         if (estado != EstadoObra.EN_PROCESO) {
             obra.cambiarEstado(estado, "motivo de prueba");
         }
@@ -115,6 +130,7 @@ class FacturaCobroTest {
     }
 
     private static EmitirFacturaDTO datosFactura() {
+        // Devuelve los datos comunes de emisión de factura.
         return new EmitirFacturaDTO(OBRA_ID, EMISION, VENCIMIENTO, new BigDecimal("200000"));
     }
 
@@ -123,22 +139,27 @@ class FacturaCobroTest {
     @Test
     @DisplayName("Con la obra FINALIZADA se emite la factura con número automático y estado PENDIENTE")
     void obraFinalizadaSeFactura() {
+        // Simula una obra finalizada y saldo todavía disponible.
         when(obraRepository.findById(OBRA_ID)).thenReturn(Optional.of(obra(EstadoObra.FINALIZADA)));
         when(facturaRepository.totalFacturadoObra(OBRA_ID)).thenReturn(BigDecimal.ZERO);
         when(facturaRepository.siguienteNumero()).thenReturn(1L);
+        // Asigna el identificador generado al guardar la factura.
         when(facturaRepository.save(any(Factura.class))).thenAnswer(inv -> {
             Factura f = inv.getArgument(0);
             ReflectionTestUtils.setField(f, "id", FACTURA_ID);
             return f;
         });
 
+        // Ejecuta la emisión con los datos preparados.
         var resultado = service.emitir(datosFactura(), actor);
 
+        // Verifica los datos principales y el estado inicial de la factura.
         assertThat(resultado.id()).isEqualTo(FACTURA_ID);
         assertThat(resultado.numeroFactura()).isEqualTo("F-0001");
         assertThat(resultado.estadoPago()).isEqualTo(EstadoPago.PENDIENTE);
         assertThat(resultado.anulada()).isFalse();
         assertThat(resultado.fechaPago()).isNull();
+        // Comprueba que se registre la emisión en auditoría.
         verify(auditoriaService).registrar(eq(actor), eq("facturas"), eq(FACTURA_ID),
                 eq("EMITIR_FACTURA"), isNull(), isNull(), anyMap());
     }
@@ -146,12 +167,15 @@ class FacturaCobroTest {
     @Test
     @DisplayName("Con la obra EN_PROCESO no se puede facturar")
     void obraNoFinalizadaNoSeFactura() {
+        // Simula una obra todavía en proceso.
         when(obraRepository.findById(OBRA_ID)).thenReturn(Optional.of(obra(EstadoObra.EN_PROCESO)));
 
+        // Ejecuta la emisión y verifica la excepción de estado.
         assertThatThrownBy(() -> service.emitir(datosFactura(), actor))
                 .isInstanceOf(ConflictoNegocioException.class)
                 .hasMessage("Solo se puede facturar una obra en estado FINALIZADA.");
 
+        // Confirma que no se guarde ni audite la operación rechazada.
         verify(facturaRepository, never()).save(any(Factura.class));
         verify(auditoriaService, never()).registrar(any(), any(), any(), any(), any(), any(), any());
     }
@@ -159,25 +183,31 @@ class FacturaCobroTest {
     @Test
     @DisplayName("Con la obra SUSPENDIDA tampoco se puede facturar")
     void obraSuspendidaNoSeFactura() {
+        // Simula una obra suspendida.
         when(obraRepository.findById(OBRA_ID)).thenReturn(Optional.of(obra(EstadoObra.SUSPENDIDA)));
 
+        // Comprueba que el estado suspendido tampoco permite facturar.
         assertThatThrownBy(() -> service.emitir(datosFactura(), actor))
                 .isInstanceOf(ConflictoNegocioException.class)
                 .hasMessage("Solo se puede facturar una obra en estado FINALIZADA.");
 
+        // Verifica que no se genere una factura.
         verify(facturaRepository, never()).save(any(Factura.class));
     }
 
     @Test
     @DisplayName("No se puede facturar más que el saldo por facturar de la obra")
     void noSePuedeFacturarMasQueElSaldo() {
+        // Simula una obra finalizada con parte de su presupuesto ya facturado.
         when(obraRepository.findById(OBRA_ID)).thenReturn(Optional.of(obra(EstadoObra.FINALIZADA)));
         when(facturaRepository.totalFacturadoObra(OBRA_ID)).thenReturn(new BigDecimal("150000"));
 
+        // Intenta emitir 200000 sobre solo 50000 disponibles y verifica el rechazo.
         assertThatThrownBy(() -> service.emitir(datosFactura(), actor))
                 .isInstanceOf(ConflictoNegocioException.class)
                 .hasMessageContaining("supera el saldo");
 
+        // Confirma que no se persista ni audite la factura inválida.
         verify(facturaRepository, never()).save(any(Factura.class));
         verify(auditoriaService, never()).registrar(any(), any(), any(), any(), any(), any(), any());
     }
@@ -185,6 +215,7 @@ class FacturaCobroTest {
     // ---------- HU-14: registrar pago ----------
 
     private Factura facturaPendiente() {
+        // Construye una factura pendiente asociada a una obra finalizada.
         var f = new Factura("F-0001", obra(EstadoObra.FINALIZADA), EMISION, VENCIMIENTO,
                 new BigDecimal("200000"));
         ReflectionTestUtils.setField(f, "id", FACTURA_ID);
@@ -194,13 +225,17 @@ class FacturaCobroTest {
     @Test
     @DisplayName("Una factura PENDIENTE se paga y queda PAGADO con su fecha de pago")
     void facturaPendienteSePaga() {
+        // Prepara una factura pendiente y simula su búsqueda.
         var factura = facturaPendiente();
         when(facturaRepository.findById(FACTURA_ID)).thenReturn(Optional.of(factura));
 
+        // Registra el pago usando la fecha establecida.
         var resultado = service.registrarPago(FACTURA_ID, new RegistrarPagoDTO(PAGO), actor);
 
+        // Comprueba el estado pagado y la fecha guardada.
         assertThat(resultado.estadoPago()).isEqualTo(EstadoPago.PAGADO);
         assertThat(resultado.fechaPago()).isEqualTo(PAGO);
+        // Verifica la auditoría del pago.
         verify(auditoriaService).registrar(eq(actor), eq("facturas"), eq(FACTURA_ID),
                 eq("REGISTRAR_PAGO"), isNull(), anyMap(), anyMap());
     }
@@ -208,19 +243,22 @@ class FacturaCobroTest {
     @Test
     @DisplayName("Una factura PAGADA no se vuelve a pagar: el segundo pago se rechaza y no cambia nada")
     void facturaPagadaNoSePagaDosVeces() {
+        // Prepara una factura pendiente y realiza el primer pago.
         var factura = facturaPendiente();
         when(facturaRepository.findById(FACTURA_ID)).thenReturn(Optional.of(factura));
 
         service.registrarPago(FACTURA_ID, new RegistrarPagoDTO(PAGO), actor);
 
+        // Intenta registrar un segundo pago en una fecha posterior.
         var segundoPago = new RegistrarPagoDTO(PAGO.plusDays(5));
         assertThatThrownBy(() -> service.registrarPago(FACTURA_ID, segundoPago, actor))
                 .isInstanceOf(ConflictoNegocioException.class)
                 .hasMessage("La factura ya se encuentra pagada.");
 
-        // Sigue pagada con la fecha del primer pago y se auditó un solo pago
+        // Comprueba que siga pagada con la fecha del primer pago.
         assertThat(factura.getEstadoPago()).isEqualTo(EstadoPago.PAGADO);
         assertThat(factura.getFechaPago()).isEqualTo(PAGO);
+        // Confirma que el primer pago produjo exactamente una auditoría.
         verify(auditoriaService, times(1)).registrar(any(), eq("facturas"), eq(FACTURA_ID),
                 eq("REGISTRAR_PAGO"), any(), anyMap(), anyMap());
     }

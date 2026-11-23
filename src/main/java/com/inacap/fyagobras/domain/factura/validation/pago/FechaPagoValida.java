@@ -6,9 +6,11 @@ import com.inacap.fyagobras.infra.exception.ConflictoNegocioException;
 import org.springframework.stereotype.Component;
 
 @Component
+// Validador FechaPagoValida: aplica una regla del dominio.
 public class FechaPagoValida implements ValidarRegistrarPago {
 
     @Override
+    // Ejecuta la operacion validate.
     public void validate(Factura factura, RegistrarPagoDTO data) {
         if (data.fechaPago().isBefore(factura.getFechaEmision())) {
             throw new ConflictoNegocioException(

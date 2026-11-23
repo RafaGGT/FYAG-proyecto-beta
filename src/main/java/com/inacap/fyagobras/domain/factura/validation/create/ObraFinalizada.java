@@ -9,12 +9,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
+// Validador ObraFinalizada: aplica una regla del dominio.
 public class ObraFinalizada implements ValidarEmitirFactura {
 
     @Autowired
     private ObraRepository repository;
 
     @Override
+    // Ejecuta la operacion validate.
     public void validate(EmitirFacturaDTO data) {
         var obra = repository.findById(data.obraId())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Obra no encontrada"));

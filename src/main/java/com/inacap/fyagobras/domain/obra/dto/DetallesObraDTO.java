@@ -6,6 +6,7 @@ import com.inacap.fyagobras.domain.obra.Obra;
 import java.time.LocalDate;
 import java.util.List;
 
+// DTO DetallesObraDTO: transporta datos entre el dominio y la API.
 public record DetallesObraDTO(
         Long id,
         String nombre,
@@ -23,6 +24,7 @@ public record DetallesObraDTO(
         // Servicios/materiales cotizados por Finanzas: solo la descripción, nunca el monto
         List<String> itemsPresupuesto
 ) {
+    // Ejecuta la operacion DetallesObraDTO.
     public DetallesObraDTO(Obra o) {
         this(o.getId(), o.getNombre(), o.getDescripcion(), o.getEstado(),
                 o.getFechaInicio(), o.getFechaTermino(), o.getMotivoSuspension(),

@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.List;
 
 @Service
+// Clase PresupuestoService: implementa la funcionalidad del dominio.
 public class PresupuestoService {
 
     @Autowired
@@ -37,6 +38,7 @@ public class PresupuestoService {
 
     // HU-01: solo con un cliente válido y al menos un ítem; queda PENDIENTE
     @Transactional
+    // Ejecuta la operacion registrar.
     public DetallesPresupuestoDTO registrar(RegistrarPresupuestoDTO datos) {
         // Verifica que el cliente relacionado exista.
         var cliente = clienteRepository.findById(datos.clienteId())
@@ -49,12 +51,14 @@ public class PresupuestoService {
     }
 
     @Transactional(readOnly = true)
+    // Ejecuta la operacion obtener.
     public DetallesPresupuestoDTO obtener(Long id) {
         // Busca y transforma el presupuesto solicitado.
         return new DetallesPresupuestoDTO(buscar(id));
     }
 
     @Transactional(readOnly = true)
+    // Ejecuta la operacion listar.
     public Page<ListaPresupuestoDTO> listar(EstadoPresupuesto estado, Pageable paginacion) {
         // Consulta todos los presupuestos o solo los del estado indicado.
         var pagina = (estado == null)
@@ -66,6 +70,7 @@ public class PresupuestoService {
 
     // Para el Supervisor: presupuestos aprobados que aún no tienen obra, sin montos
     @Transactional(readOnly = true)
+    // Ejecuta la operacion aprobados.
     public List<ResumenPresupuestoDTO> aprobados() {
         // Consulta los presupuestos aprobados sin obra, ordenados por fecha de aprobación.
         return presupuestoRepository.findDisponiblesParaObra(EstadoPresupuesto.APROBADO)
@@ -74,6 +79,7 @@ public class PresupuestoService {
 
     // Un presupuesto aprobado o rechazado ya no se puede modificar
     @Transactional
+    // Ejecuta la operacion actualizar.
     public DetallesPresupuestoDTO actualizar(Long id, ModificarPresupuestoDTO datos) {
         // Recupera el presupuesto que se quiere modificar.
         var presupuesto = buscar(id);
@@ -86,6 +92,7 @@ public class PresupuestoService {
         return new DetallesPresupuestoDTO(presupuesto);
     }
 
+    // Ejecuta la operacion buscar.
     private Presupuesto buscar(Long id) {
         // Centraliza la búsqueda y el error de recurso inexistente.
         return presupuestoRepository.findById(id)
@@ -93,6 +100,7 @@ public class PresupuestoService {
     }
 
     @Transactional
+    // Ejecuta la operacion aprobar.
     public DetallesPresupuestoDTO aprobar(Long id, Usuario actor) {
         // Obtiene el presupuesto y valida que pueda ser aprobado por el actor.
         var presupuesto = buscar(id);
@@ -120,6 +128,7 @@ public class PresupuestoService {
 
 
     @Transactional
+    // Ejecuta la operacion rechazar.
     public DetallesPresupuestoDTO rechazar(Long id, RechazarPresupuestoDTO datos, Usuario actor) {
         // Obtiene el presupuesto y valida el permiso para resolverlo.
         var presupuesto = buscar(id);
@@ -142,6 +151,7 @@ public class PresupuestoService {
         return new DetallesPresupuestoDTO(presupuesto);
     }
 
+    // Ejecuta la operacion validarPendiente.
     private void validarPendiente(Presupuesto presupuesto) {
         // Solo los presupuestos pendientes pueden cambiar de estado.
         if (!presupuesto.estaPendiente()) {

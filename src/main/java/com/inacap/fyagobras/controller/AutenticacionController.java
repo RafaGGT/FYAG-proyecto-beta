@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 // Define la clase como un controlador REST y mapea la ruta base "/login"
 @RestController
 @RequestMapping("/login")
+// Este controlador recibe usuario y contraseña, verifica la identidad y entrega tokens JWT.
+// Responde con datos de autenticación en lugar de redirigir a una página HTML.
 public class AutenticacionController {
 
     // Inyecta el administrador de autenticación de Spring Security
@@ -36,6 +38,8 @@ public class AutenticacionController {
     public ResponseEntity<DatosJWTToken> autenticarUsuario(
             @RequestBody @Valid LoginDTO datosAutenticacionUsuario) {
         
+        // @RequestBody convierte el JSON enviado por el cliente en un objeto LoginDTO.
+        // @Valid comprueba primero las reglas de validación declaradas dentro del DTO.
         // Crea un token de autenticación temporal con las credenciales recibidas (username y password)
         Authentication authToken = new UsernamePasswordAuthenticationToken(
                 datosAutenticacionUsuario.username(),
@@ -53,7 +57,8 @@ public class AutenticacionController {
         // Genera el token de refresco (Refresh Token) para renovar el acceso posteriormente
         var refreshToken = tokenService.generarRefreshToken(usuario);
 
-        // Retorna una respuesta HTTP 200 OK con ambos tokens
+        // ResponseEntity contiene el estado HTTP, los encabezados y el cuerpo de la respuesta.
+        // ok() asigna 200 OK y el objeto DatosJWTToken se convierte automáticamente a JSON.
         return ResponseEntity.ok(new DatosJWTToken(accessToken, refreshToken));
     }
 
@@ -61,6 +66,7 @@ public class AutenticacionController {
     @PostMapping("/actualizar-token")
     public ResponseEntity<DatosJWTToken> actualizarToken(@RequestBody String refreshToken) {
         
+        // @RequestBody recibe el refresh token como texto enviado por el cliente.
         // Verifica y decodifica el refresh token recibido asegurando que sea de tipo "refresh"
         var decoded = tokenService.verificarToken(refreshToken, "refresh");
         
@@ -82,7 +88,8 @@ public class AutenticacionController {
         // Genera un nuevo refresh token
         var nuevoRefreshToken = tokenService.generarRefreshToken(usuario);
 
-        // Retorna una respuesta HTTP 200 OK con los nuevos tokens renovados
+        // Si todas las comprobaciones pasan, 200 OK indica que la renovación fue exitosa.
+        // El cuerpo contiene el nuevo access token y un nuevo refresh token.
         return ResponseEntity.ok(new DatosJWTToken(nuevoAccessToken, nuevoRefreshToken));
     }
 }

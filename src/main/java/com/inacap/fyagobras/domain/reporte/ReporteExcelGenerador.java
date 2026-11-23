@@ -9,8 +9,10 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 
 @Component
+// Clase ReporteExcelGenerador: implementa la funcionalidad del dominio.
 public class ReporteExcelGenerador {
 
+    // Ejecuta la operacion generar.
     public byte[] generar(ReporteDatos datos) {
         try (var libro = new XSSFWorkbook(); var salida = new ByteArrayOutputStream()) {
             var hoja = libro.createSheet("Reporte");

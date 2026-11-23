@@ -1,5 +1,6 @@
 package com.inacap.fyagobras.domain.obra;
 
+// Representa las etapas por las que puede pasar una obra.
 public enum EstadoObra {
     // Define los posibles estados de una obra
     EN_PROCESO,
@@ -8,6 +9,7 @@ public enum EstadoObra {
     CANCELADA;
     // Método que determina si es posible cambiar de un estado actual a un estado destino
     public boolean puedePasarA(EstadoObra destino) {
+        // Ejecuta la operacion switch.
         return switch (this) {
             // Define las transiciones válidas entre estados
             // Desde EN_PROCESO se puede pasar a FINALIZADA, SUSPENDIDA o CANCELADA

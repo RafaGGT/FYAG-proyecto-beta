@@ -13,6 +13,7 @@ import jakarta.persistence.GenerationType;
 @Setter // Genera automáticamente los métodos setters para todos los atributos mediante Lombok
 @NoArgsConstructor // Genera un constructor vacío por defecto requerido por JPA
 @ToString // Genera automáticamente el método toString para la clase
+// Clase Persona: implementa la funcionalidad del dominio.
 public class Persona {
     
     // Define el atributo como la clave primaria (ID) de la entidad
