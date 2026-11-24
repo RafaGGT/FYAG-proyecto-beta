@@ -85,7 +85,7 @@ public class SecurityConfigurations {
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://localhost:5174",
-                "proyecto-frontend-pied.vercel.app"
+                "https://proyecto-frontend-pied.vercel.app"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
