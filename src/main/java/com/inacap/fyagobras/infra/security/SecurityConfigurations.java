@@ -85,7 +85,7 @@ public class SecurityConfigurations {
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://localhost:5174",
-                "https://fyag-frontend-one.vercel.app"
+                "https://proyecto-frontend-sigma-three.vercel.app"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
