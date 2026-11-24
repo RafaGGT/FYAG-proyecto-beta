@@ -22,7 +22,7 @@ public class CorsConfig {
                 registry.addMapping("/**")
                         // allowedOrigins enumera las direcciones web autorizadas.
                         // Estas dos direcciones corresponden al servidor local de Vite en los puertos 5173 y 5174.
-                        .allowedOrigins("http://localhost:5173", "http://localhost:5174", "https://fyag-frontend-beryl.vercel.app")
+                        .allowedOrigins("http://localhost:5173", "http://localhost:5174", "https://fyag-frontend-one.vercel.app")
                         // allowedMethods indica qué operaciones HTTP puede realizar el frontend.
                         // OPTIONS se utiliza internamente en el navegador para comprobar CORS antes de una petición.
                         .allowedMethods("GET", "POST", "PUT", "PATCH" , "OPTIONS")
