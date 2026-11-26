@@ -85,7 +85,7 @@ public class SecurityConfigurations {
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://localhost:5174",
-                "${FRONTEND_URL}"
+                ${FRONTEND_URL}
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
