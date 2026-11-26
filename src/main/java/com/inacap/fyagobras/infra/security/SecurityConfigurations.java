@@ -38,7 +38,8 @@ public class SecurityConfigurations {
     private RateLimitFilter rateLimitFilter;
     @Autowired
     private ErrorSeguridadHandler errorSeguridadHandler;
-
+    @Value("${FRONTEND_URL}")
+    private String frontendUrl;
     /**
      * Construye la cadena de filtros y las reglas de autorización HTTP.
      *
@@ -85,7 +86,7 @@ public class SecurityConfigurations {
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://localhost:5174",
-                ${FRONTEND_URL}
+                frontendUrl
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
