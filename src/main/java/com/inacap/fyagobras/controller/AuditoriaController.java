@@ -1,7 +1,9 @@
 package com.inacap.fyagobras.controller;
 
 import com.inacap.fyagobras.domain.audit.AuditoriaService;
+import com.inacap.fyagobras.domain.audit.ParametrosConsulta;
 import com.inacap.fyagobras.domain.audit.dto.DetallesAuditoriaDTO;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -29,7 +31,10 @@ public class AuditoriaController {
     /** Ver todos los registros (20 por página, más recientes primero). */
     @GetMapping
     public ResponseEntity<PagedModel<DetallesAuditoriaDTO>> listar(
-            @PageableDefault(size = 20, sort = "fecha", direction = Sort.Direction.DESC) Pageable paginacion) {
+            @PageableDefault(size = 20, sort = "fecha", direction = Sort.Direction.DESC) Pageable paginacion,
+            HttpServletRequest request) {
+        // Rechaza con 400 cualquier parámetro no permitido (ej: usuarioId[$ne]=0).
+        ParametrosConsulta.validar(request);
         // @PageableDefault crea la página predeterminada: 20 registros, desde la fecha más reciente.
         // Page contiene los registros y metadatos como número de página y cantidad total.
         // PagedModel transforma esa información para que Spring la entregue como JSON.
@@ -41,7 +46,9 @@ public class AuditoriaController {
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<PagedModel<DetallesAuditoriaDTO>> porUsuario(
             @PathVariable Long usuarioId,
-            @PageableDefault(size = 20, sort = "fecha", direction = Sort.Direction.DESC) Pageable paginacion) {
+            @PageableDefault(size = 20, sort = "fecha", direction = Sort.Direction.DESC) Pageable paginacion,
+            HttpServletRequest request) {
+        ParametrosConsulta.validar(request);
         // @PathVariable toma el valor usuarioId desde la URL, por ejemplo /auditoria/usuario/7.
         // El servicio filtra los registros para ese usuario y devuelve una página paginada.
         // 200 OK representa una búsqueda exitosa; una página vacía también sería una respuesta válida.
@@ -53,7 +60,9 @@ public class AuditoriaController {
     public ResponseEntity<PagedModel<DetallesAuditoriaDTO>> porFecha(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
-            @PageableDefault(size = 20, sort = "fecha", direction = Sort.Direction.DESC) Pageable paginacion) {
+            @PageableDefault(size = 20, sort = "fecha", direction = Sort.Direction.DESC) Pageable paginacion,
+            HttpServletRequest request) {
+        ParametrosConsulta.validar(request, "desde", "hasta");
         // @RequestParam recibe desde y hasta como parámetros de consulta, por ejemplo ?desde=2026-10-01.
         // @DateTimeFormat permite interpretar el texto enviado como una fecha LocalDate válida.
         // ResponseEntity devuelve 200 OK con una PagedModel cuando el rango fue procesado correctamente.
